@@ -1,9 +1,9 @@
 module OpenTox
 
-  class Nanomaterial
+  class Nanoparticle
     include OpenTox
 
-    attr_accessor :uri, :tox, :p_chem, :core, :coating
+    attr_accessor :name, :uri, :tox, :p_chem, :core, :coating
 
   end
 end
