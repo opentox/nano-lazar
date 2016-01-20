@@ -1,7 +1,7 @@
 require 'sinatra'
 require "sinatra/reloader" if development?
-require_relative 'protein_corona.rb'
-also_reload './protein_corona.rb'
+require_relative 'nanoparticles.rb'
+also_reload './nanoparticles.rb'
 
 get '/?' do
   @data = JSON.parse(File.read("./data.json"))
