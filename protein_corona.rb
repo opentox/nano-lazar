@@ -1,8 +1,35 @@
 require 'json'
 require 'yaml'
 require 'csv'
-#require_relative "../lazar/lib/lazar.rb"
-#include OpenTox
+
+ENDPOINT = "Cell.association (Net cell association [mL/ug(Mg)])"
+
+def predict params
+  neighbors = []
+  sim_sum = 0
+  weighted_sum = 0
+  match = nil
+  JSON.parse(File.read("./data.json")).each do |id,categories|
+    if params.values == categories["physchem"].values
+      match = {:id => categories}
+    else
+      sim = cosine_similarity(params.values,categories["physchem"].values)
+      neighbor = categories
+      neighbor["similarity"] = sim
+      neighbor["id"] = id
+      sim_sum += sim
+      weighted_sum += sim*Math.log(categories["tox"][ENDPOINT])
+      neighbors << neighbor
+    end
+  end
+  neighbors.sort!{|a,b| b["similarity"] <=> a["similarity"]}
+  {
+    :query => params,
+    :match => match,
+    :prediction => {ENDPOINT => 10**(weighted_sum/sim_sum)},
+    :neighbors => neighbors
+  }
+end
 
 class Object
   def numeric?
@@ -70,18 +97,20 @@ def csv2json
   data = {}
   csv.drop(12).each do |row|
     id = row.first
-    data[id] = {}
-    row.each_with_index do |col,i|
-      if i == 0
-        data[id][:composition] = {}
-      elsif i < 5
-        data[id][:composition][feature_names[i]] = col
-      elsif i < 7
-        data[id][:tox] ||= {}
-        data[id][:tox][feature_names[i]] = col
-      else
-        data[id][:physchem] ||= {}
-        data[id][:physchem][feature_names[i]] = col
+    if id.match /^G/ # skip Ag, too many missing values
+      data[id] = {}
+      row.each_with_index do |col,i|
+        if i == 0
+          data[id][:composition] = {}
+        elsif i < 5
+          data[id][:composition][feature_names[i]] = col
+        elsif i == 5
+          data[id][:tox] ||= {}
+          data[id][:tox][feature_names[i]] = col
+        elsif i > 6
+          data[id][:physchem] ||= {}
+          data[id][:physchem][feature_names[i]] = col
+        end
       end
     end
   end
