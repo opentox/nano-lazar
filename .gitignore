@@ -1,5 +1,6 @@
 lib
-data
+data/*csv
+data/*yaml
 papers
 *tmp
 *swp
