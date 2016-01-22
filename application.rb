@@ -4,11 +4,10 @@ require_relative 'nanoparticles.rb'
 also_reload './nanoparticles.rb'
 
 get '/?' do
-  @data = JSON.parse(File.read("./data.json"))
-  @example = @data[@data.keys.sample]["physchem"]
+  data = JSON.parse(File.read("./data.json"))
+  relevant_features = JSON.parse(File.read("./relevant-features.json"))
+  @example = data[data.keys.sample]["physchem"].select{|f,v| relevant_features.keys.include? f}
   # create a data entry form with @example as default values
-  #content_type :json
-  #JSON.pretty_generate(@example)
 end
 
 post '/?' do
@@ -16,6 +15,4 @@ post '/?' do
   # display prediction with
   # query + prediction (or match if available)
   # neighbors: id, composition, physchem, tox, similarity
-  #content_type :json
-  #JSON.pretty_generate(@example)
 end
