@@ -1,0 +1,18 @@
+%div.well
+  %form{:role=>"form", :action=> to("/predict"), :method=>"post"}
+    %span.help-block
+      some help text to explain
+    #input
+    - size = @example.size
+    - @example.each_with_index do |v,id|
+      - id = id + 1
+      - key = v[0]
+      - val = v[1]
+      %div.form-group
+        %h3= key
+        %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>key}
+        %input.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val}
+    %input.form-control{:id=>"example",:type=>"hidden",:name=>"size",:value=>size}
+    %hr
+    #predict
+      %button.btn.btn-info{:type=>"submit"} predict

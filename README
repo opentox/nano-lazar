@@ -1,0 +1,10 @@
+IST Software&Services
+
+Nano Lazar for eNanoMapper project
+
+installation:
+- bundle install
+
+usage:
+-run 'unicorn -D'
+-visit 'localhost:8080'

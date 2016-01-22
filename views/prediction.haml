@@ -1,0 +1,54 @@
+%div.well
+  %ul.nav.nav-tabs
+    %li
+      %a{:href=>"#query", :data=>{:toggle=>"tab"}} Query
+    %li
+      %a{:href=>"#match", :data=>{:toggle=>"tab"}} Match
+    %li.active
+      %a{:href=>"#prediction", :data=>{:toggle=>"tab"}} Prediction
+    %li
+      %a{:href=>"#neighbors", :data=>{:toggle=>"tab"}} Neighbors
+
+  %div.tab-content
+    #query.tab-pane.fade
+      %span.help-block
+        your query was
+      - @input.each_with_index do |v,id|
+        - key = v[0]
+        - val = v[1]
+        %h3= key
+        %input.form-control{:id=>id,:type=>"text",:value=>"#{val}", :disabled=>"true"}
+    #match.tab-pane.fade
+      - if @prediction[:match]  
+        %table
+        - @prediction[:match][:id].keys.each do |key|
+          %tr
+            %h3= key.capitalize
+          - @prediction[:match][:id][key.to_s].each do |k,v|
+            %td
+              %h5= k
+              %p= v
+      - else
+        %h3 No match
+    #prediction.tab-pane.in.active
+      - @prediction[:prediction].each do |k,v|
+        %h3= k
+        %p= v
+    #neighbors.tab-pane.fade
+      - @prediction[:neighbors].each do |neighbor|
+        %h3= neighbor["id"]
+        %h5= "Similarity: #{neighbor["similarity"]}"
+        %h3 Composition
+        - neighbor["composition"].each do |k,v|
+          %h5= k
+          %p= v
+        %h3 Tox
+        - neighbor["tox"].each do |k,v|
+          %h5= k
+          %p= v
+        %h3 Physchem
+        - neighbor["physchem"].each do |k,v|
+          %h5= k
+          %p= v
+        %hr
+
