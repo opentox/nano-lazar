@@ -3,8 +3,8 @@
 Gem::Specification.new do |s|
   s.name        = "nano-lazar-gui"
   s.version     = File.read("./VERSION")
-  s.authors     = ["Christoph Helma","Denis Gebele"]
-  s.email       = ["helma@in-silico.ch","gebele@in-silico.ch"]
+  s.authors     = ["Christoph Helma","Micha Rautenberg","Denis Gebele"]
+  s.email       = ["helma@in-silico.ch","rautenberg@in-silico.ch","gebele@in-silico.ch"]
   s.homepage    = "http://github.com/gebele/nano-lazar-gui"
   s.summary     = %q{nano-lazar-gui}
   s.description = %q{Graphical User Interface for Nano Lazar Toxicology Predictions}

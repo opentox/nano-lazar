@@ -10,21 +10,23 @@
     %link{:rel=>'stylesheet', :href=>"#{'/css/theme.default.min.css'}"}
     %link{:rel=>'stylesheet', :href=>"#{'/css/theme.bootstrap.min.css'}"}
     %script{:src=>"/javascripts/jquery-1.11.2.min.js"}
+    %script{:src=>"/javascripts/jquery.tablesorter.min.js"}
+    %script{:src=>"/javascripts/jquery.tablesorter.widgets.js"}
     %script{:src=>"/javascripts/bootstrap.min.js"}
   %body
     %noscript
       %div{ :style=>"width: 22em; position: absolute; left: 50%; margin-left: -11em; color: red; background-color: white; border: 1px solid red; padding: 4px; font-family: sans-serif"}
       Your web browser must have JavaScript enabled in order for this application to display correctly.
-    %header.page-header
+    %header.page-header{:style=>"margin:20px 0 20px;"}
       %div.row
-        %div.col-md-2
+        %div.col-sm-2
           %a{:href=> to("/predict")}
             %img.media-object{:src=>"/images/ist_logo.png", :alt=>"logo_ist", :style=>"margin:0 3em 0 2em;"}
-        %div.col-md-6
-          %h1.media-heading{:style=>"margin: 0 0 0 1em;"} Nano Lazar Toxicity Predictions
-        %div.col-md-2
-          %a{:href=> "http://www.enanomapper.net" }
-            %img.media-object{:src=>"/images/enm-sm.jpg", :width=>"200px", :heigth=>"200px", :alt=>"logo_enm", :style=>"margin:0 3em 0 2em;"}
+        %div.col-sm-6
+          %h1.media-heading{:style=>"margin: 0 0 0 1em;"} nano-lazar Toxicity Predictions
+        %div.col-sm-2
+          %a{:href=> "http://www.enanomapper.net"}
+            %img.media-object{:src=>"/images/enm_logo.png", :width=>"200px", :heigth=>"200px", :alt=>"logo_enm", :style=>"margin:0 3em 0 2em;"}
     
     %div.container-fluid
       :javascript
@@ -38,7 +40,7 @@
       %div.container-fluid
         %p.text-muted
           &copy; 
-          %a{:href => 'http://www.in-silico.ch', :rel => "external"} <i style="font-family: serife">in silico</i> toxicology gmbh 2004 - #{Time.now.year.to_s}
+          %a{:href => 'http://www.in-silico.ch', :rel => "external"} <i style="font-family: serife">in silico</i> toxicology gmbh 2014 - #{Time.now.year.to_s}
 
     #back-top{:style => "z-index:100;position:fixed;bottom:1%;right:1%;"}
       %a{:href => "", :style=>"text:decoration:none;color:#ccc;"}
