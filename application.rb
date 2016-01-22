@@ -10,8 +10,9 @@ get '/?' do
 end
 
 get '/predict/?' do
-  @data = JSON.parse(File.read("./data.json"))
-  @example = @data[@data.keys.sample]["physchem"]
+  data = JSON.parse(File.read("./data.json"))
+  relevant_features = JSON.parse(File.read("./relevant-features.json"))
+  @example = data[data.keys.sample]["physchem"].select{|f,v| relevant_features.keys.include? f}
   #@json_example = JSON.pretty_generate(@example)
   haml :predict
 end

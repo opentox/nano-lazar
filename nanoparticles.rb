@@ -1,3 +1,4 @@
+require 'rserve'
 require 'json'
 require 'yaml'
 require 'csv'
@@ -9,24 +10,32 @@ def predict params
   sim_sum = 0
   weighted_sum = 0
   match = nil
+  relevant_features = JSON.parse(File.read("./relevant-features.json"))
+  weights = relevant_features.values.collect{|v| v["r"]}
   JSON.parse(File.read("./data.json")).each do |id,categories|
-    if params.values == categories["physchem"].values
-      match = {:id => categories}
+    neighbor_values = categories["physchem"].select{|f,v| params.keys.include? f}.values
+    if params.values == neighbor_values
+      match = {id => categories}
     else
-      sim = cosine_similarity(params.values,categories["physchem"].values)
-      neighbor = categories
-      neighbor["similarity"] = sim
-      neighbor["id"] = id
-      sim_sum += sim
-      weighted_sum += sim*Math.log(categories["tox"][ENDPOINT])
-      neighbors << neighbor
+      sim = weighted_cosine_similarity(params.values,neighbor_values,weights)
+      if sim > 0.95
+        neighbor = categories
+        neighbor["similarity"] = sim
+        neighbor["sim"] = cosine_similarity(params.values,neighbor_values)
+        neighbor["id"] = id
+        sim_sum += sim
+        weighted_sum += sim*Math.log10(categories["tox"][ENDPOINT])
+        #weighted_sum += sim*categories["tox"][ENDPOINT]
+        neighbors << neighbor
+      end
     end
   end
   neighbors.sort!{|a,b| b["similarity"] <=> a["similarity"]}
+  sim_sum == 0 ? prediction = nil : prediction =  10**(weighted_sum/sim_sum)
   {
     :query => params,
     :match => match,
-    :prediction => {ENDPOINT => 10**(weighted_sum/sim_sum)},
+    :prediction => {ENDPOINT => prediction},
     :neighbors => neighbors
   }
 end
@@ -44,16 +53,30 @@ end
 
 def dot_product(a, b)
   products = a.zip(b).map{|a, b| a * b}
-  products.inject(0){|s,p| s + p}
+  products.inject(0) {|s,p| s + p}
 end
 
 def magnitude(point)
-  squares = point.map{|x| x.to_f ** 2}
+  squares = point.map{|x| x ** 2}
   Math.sqrt(squares.inject(0) {|s, c| s + c})
 end
 
+# http://stackoverflow.com/questions/1838806/euclidean-distance-vs-pearson-correlation-vs-cosine-similarity
 def cosine_similarity(a, b)
   dot_product(a, b) / (magnitude(a) * magnitude(b))
+end
+
+def weighted_cosine_similarity(a, b, w)
+  dot_product = 0
+  magnitude_a = 0
+  magnitude_b = 0
+  (0..a.size-1).each do |i|
+    dot_product += w[i].abs*a[i]*b[i]
+    magnitude_a += w[i].abs*a[i]**2
+    magnitude_b += w[i].abs*b[i]**2
+  end
+  dot_product/Math.sqrt(magnitude_a*magnitude_b)
+
 end
 
 #@endpoint = @data.collect{|r| r[5]}
