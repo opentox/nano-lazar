@@ -60,7 +60,10 @@
       - if @prediction[:prediction]
         - @prediction[:prediction].each do |k,v|
           %h5= k
-          %p= v.round(5)
+          - if v == nil
+            %p no value
+          - else
+            %p= v.round(5)
     #neighbors.tab-pane.fade
       - if @prediction[:neighbors]
         :javascript
