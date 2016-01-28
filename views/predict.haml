@@ -1,18 +1,23 @@
 %div.well
   %form{:role=>"form", :action=> to("/predict"), :method=>"post"}
     %h3.help-block
-      Please characterise a Gold nanoparticle
+      Please characterise a nanoparticle
+    %hr
     #input
     - size = @example.size
+    %div.form-group
+      %h5 Core
+      %input.input-sm.form-control{:id=>"Au",:type=>"text",:name=>"input_value_Au",:value=>"[Au]", :disabled=>"true"}
     - @example.each_with_index do |v,id|
       - id = id + 1
       - key = v[0]
       - val = v[1]
-      %div.form-group
-        %h5= key
-        %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>key}
-        %input.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val}
+      %h5= key.gsub(/\sMean/, '')
+      %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>key}
+      %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val}
     %input.form-control{:id=>"example",:type=>"hidden",:name=>"size",:value=>size}
     %hr
     #predict
-      %button.btn.btn-info{:type=>"submit"} predict
+      %button.btn.btn-success{:type=>"submit"} 
+        Find similar nano particles
+        %span.glyphicon.glyphicon-chevron-right

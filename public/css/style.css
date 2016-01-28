@@ -1,0 +1,9 @@
+.tablesorter thead tr th {
+  vertical-align: middle;
+}
+.tablesorter tbody tr td {
+  white-space: nowrap;
+}
+.tablesorter tbody tr.static td {
+  background-color: #B0B0B0;
+}

@@ -1,153 +1,142 @@
 %div.well
-  %a.btn.btn-xs.btn-warning{:href => to('/predict'), :style=>"margin-bottom:1em;"}
-    %i.glyphicon.glyphicon-menu-left
+  %a.btn.btn-xs.btn-default{:href => to('/predict'), :style=>"margin-bottom:1em;"}
+    %span.glyphicon.glyphicon-chevron-left
     New Prediction
-  %ul.nav.nav-tabs
-    %li
-      %a{:href=>"#query", :data=>{:toggle=>"tab"}} Query
-    %li
-      %a{:href=>"#match", :data=>{:toggle=>"tab"}} Match
-    %li.active
-      %a{:href=>"#prediction", :data=>{:toggle=>"tab"}} Prediction
-    %li
-      %a{:href=>"#neighbors", :data=>{:toggle=>"tab"}} Neighbors
 
-  %div.tab-content
-    #query.tab-pane.fade
-      %span.help-block
-        your query was
-      - @input.each_with_index do |v,id|
-        - key = v[0]
-        - val = v[1]
-        %h5= key
-        %input.form-control{:id=>id,:type=>"text",:value=>"#{val}", :disabled=>"true"}
-    #match.tab-pane.fade
-      - if @prediction[:match]
-        %table{:id=>"match", :style=>"border-style: 1px solid black;margin-top:10px;"}
-          %thead
-            %tr
-              %th
-                ID
-              %th
-                Composition
-              %th
-                Tox
-              %th
-                Physchem
-          %tbody
+  %h3.help-block
+    Similar particles
+  %hr  
+  :javascript 
+    $(document).ready(function(){
+      $("table#neighbors").tablesorter({
+        debug: false,
+        theme: "bootstrap",
+        headerTemplate: '{content} {icon}',
+        widgets: ['uitheme', 'stickyHeaders', 'staticRow'],
+        widgetOptions: {
+          stickyHeaders : '',
+          stickyHeaders_offset : 0,
+          stickyHeaders_cloneId : '-sticky',
+          stickyHeaders_addResizeEvent : true,
+          stickyHeaders_includeCaption : true,
+          stickyHeaders_zIndex : 2,
+          stickyHeaders_attachTo : null,
+          stickyHeaders_xScroll : null,
+          stickyHeaders_yScroll : null,
+          stickyHeaders_filteredToTop: true
+        },
+        sortList: [[1,1]],
+        widthFixed: false
+      });
+      $("table#physchem").tablesorter({
+        debug: false,
+        theme: "bootstrap",
+      });
+    });
+
+  %div.table-responsive
+    %table.tablesorter{:id=>"neighbors"}
+      %thead
+        %tr
+          %th
+            ID  
+          %th
+            Similarity
+          %th
+            Composition  
+          %th
+            Tox
+          %th
+            Physchem
+      %tbody
+        / query
+        %tr.static
+          / id
+          %td
+            %h5 Query
+          / similarity
+          %td
+            x
+          / composition
+          %td
+            x
+          / tox
+          %td
+            - if @prediction[:prediction]
+              - @prediction[:prediction].each do |k,v|
+                %h5 Prediction
+                %p= k
+                - if v == nil
+                  %p 0
+                - else
+                  %p= v.round(5)
+            - else
+              x
+          / physchem
+          %td
+            - @input.each do |v|
+              %div{:style=>"display:inline-block;padding-right:20px;"}
+                %h5= v[0].gsub(/\sMean/, '')
+                %p= v[1].round(3)
+        / match
+        - if @prediction[:match]
+          %tr.static
+            / id
+            %td
+              %h5= @prediction[:match].keys[0]
+            / similarity
+            %td
+              %h5 match
+            / composition
+            %td
+              - @prediction[:match].values[0]["composition"].each do |k,v|
+                %h5= k
+                %p= v
+            / tox
+            %td
+              - @prediction[:match].values[0]["tox"].each do |k,v|
+                %h5 Measurement prediction
+                %p= k
+                %p= v.round(3)
+                - if @prediction[:prediction]
+                  - @prediction[:prediction].each do |k,v|
+                    %h5 Prediction
+                    %p= k
+                    - if v == nil
+                      %p 0
+                    - else
+                      %p= v.round(5)
+            / physchem
+            %td
+              - @prediction[:match].values[0]["physchem"].each do |k,v|
+                %div{:style=>"display:inline-block;padding-right:20px;"}
+                  %h5= k.gsub(/\sMean/, '')
+                  %p= v.round(3)
+        / neighbors
+        - if @prediction[:neighbors]
+          - @prediction[:neighbors].each_with_index do |neighbor,idx|
             %tr
               / ID
               %td
-                %h5= @prediction[:match].keys[0]
-              / composition
+                %h5= neighbor["id"]
+              / Similarity
               %td
-                - @prediction[:match].values[0]["composition"].each do |k,v|
+                %h5= neighbor["similarity"].round(3)
+              / Composition
+              %td
+                - neighbor["composition"].each do |k,v|
                   %h5= k
                   %p= v
-              / tox
+              / Tox
               %td
-                - @prediction[:match].values[0]["tox"].each do |k,v|
-                  %h5= k
-                  %p= v
-              / physchem
+                - neighbor["tox"].each do |k,v|
+                  %h5 Measurement prediction
+                  %p= k
+                  %p= v.round(3)
+              / Physchem
               %td
-                - @prediction[:match].values[0]["physchem"].each do |k,v|
-                  %h5= k
-                  %p= v
-      - else
-        %h5 No match
-    #prediction.tab-pane.in.active
-      - if @prediction[:prediction]
-        - @prediction[:prediction].each do |k,v|
-          %h5= k
-          - if v == nil
-            %p no value
-          - else
-            %p= v.round(5)
-    #neighbors.tab-pane.fade
-      - if @prediction[:neighbors]
-        :javascript
-          $(document).ready(function(){
-            $("table#match").tablesorter({
-              debug: false,
-              theme: "bootstrap",
-              headerTemplate: '{content} {icon}',
-              widgets: ['uitheme', 'stickyHeaders'],
-              widgetOptions: {
-                stickyHeaders : '',
-                stickyHeaders_offset : 0,
-                stickyHeaders_cloneId : '-sticky',
-                stickyHeaders_addResizeEvent : true,
-                stickyHeaders_includeCaption : true,
-                stickyHeaders_zIndex : 2,
-                stickyHeaders_attachTo : null,
-                stickyHeaders_xScroll : null,
-                stickyHeaders_yScroll : null,
-                stickyHeaders_filteredToTop: true
-              },
-              headers: {0: {sorter: false}, 1: {sorter: false}, 2: {sorter: false}, 3: {sorter: false}},
-              sortList: [[1,1]],
-              widthFixed: false
-            });
-          });
-          $(document).ready(function(){
-            $("table#neighbors").tablesorter({
-              debug: false,
-              theme: "bootstrap",
-              headerTemplate: '{content} {icon}',
-              widgets: ['uitheme', 'stickyHeaders'],
-              widgetOptions: {
-                stickyHeaders : '',
-                stickyHeaders_offset : 0,
-                stickyHeaders_cloneId : '-sticky',
-                stickyHeaders_addResizeEvent : true,
-                stickyHeaders_includeCaption : true,
-                stickyHeaders_zIndex : 2,
-                stickyHeaders_attachTo : null,
-                stickyHeaders_xScroll : null,
-                stickyHeaders_yScroll : null,
-                stickyHeaders_filteredToTop: true
-              },
-              sortList: [[1,1]],
-              widthFixed: false
-            });
-          });
-        %div.table-responsive
-          %table.tablesorter{:id=>"neighbors", :style=>"border-style: 1px solid black;margin-top:10px;"}
-            %thead
-              %tr
-                %th{:style =>"vertical-align:middle;"}
-                  ID  
-                %th{:style =>"vertical-align:middle;"}
-                  Similarity
-                %th{:style =>"vertical-align:middle;"}
-                  Composition  
-                %th{:style =>"vertical-align:middle;"}
-                  Tox
-                %th{:style =>"vertical-align:middle;"}
-                  Physchem
-            %tbody
-            - @prediction[:neighbors].each do |neighbor|
-              %tr
-                / ID
-                %td
-                  %h5= neighbor["id"]
-                / Similarity
-                %td
-                  %h5= neighbor["similarity"].round(3)
-                / Composition
-                %td
-                  - neighbor["composition"].each do |k,v|
-                    %h5= k
-                    %p= v
-                / Tox
-                %td
-                  - neighbor["tox"].each do |k,v|
-                    %h5= k
+                - neighbor["physchem"].each do |k,v|
+                  %div{:style=>"display:inline-block;padding-right:20px;"}
+                    %h5= k.gsub(/\sMean/, '')
                     %p= v.round(3)
-                / Physchem
-                %td
-                  - neighbor["physchem"].each do |k,v|
-                    %h5= k
-                    %p= v
 
