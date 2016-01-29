@@ -5,7 +5,16 @@ require 'csv'
 
 ENDPOINT = "Cell.association (Net cell association [mL/ug(Mg)])"
 
+def query_features
+  relevant_features = JSON.parse(File.read("./relevant-features.json"))
+end
+
 def predict params
+  # calculate difference parameters
+  diff_features = JSON.parse(File.read("./diff-features.json"))
+  diff_features.each do |feature,originals|
+    params[feature] = params[originals[1]]-params[originals[0]] # causes rounding errors!
+  end
   neighbors = []
   sim_sum = 0
   weighted_sum = 0
@@ -13,21 +22,24 @@ def predict params
   relevant_features = JSON.parse(File.read("./relevant-features.json"))
   weights = relevant_features.values.collect{|v| v["r"]}
   JSON.parse(File.read("./data.json")).each do |id,categories|
-    neighbor_values = categories["physchem"].select{|f,v| params.keys.include? f}.values
-    if params.values == neighbor_values
+    query_values = []
+    neighbor_values = []
+    relevant_features.keys.each do |f|
+      query_values << params[f]
+      neighbor_values << categories["physchem"][f]
+    end
+    sim = weighted_cosine_similarity(query_values,neighbor_values,weights)
+    if sim > 0.9999 # no exact match because of rounding errors
       match = {id => categories}
-    else
-      sim = weighted_cosine_similarity(params.values,neighbor_values,weights)
-      if sim > 0.95
-        neighbor = categories
-        neighbor["similarity"] = sim
-        neighbor["sim"] = cosine_similarity(params.values,neighbor_values)
-        neighbor["id"] = id
-        sim_sum += sim
-        weighted_sum += sim*Math.log10(categories["tox"][ENDPOINT])
-        #weighted_sum += sim*categories["tox"][ENDPOINT]
-        neighbors << neighbor
-      end
+    elsif sim > 0.95
+      neighbor = categories
+      neighbor["similarity"] = sim
+      neighbor["sim"] = cosine_similarity(query_values,neighbor_values)
+      neighbor["id"] = id
+      sim_sum += sim
+      weighted_sum += sim*Math.log10(categories["tox"][ENDPOINT])
+      #weighted_sum += sim*categories["tox"][ENDPOINT]
+      neighbors << neighbor
     end
   end
   neighbors.sort!{|a,b| b["similarity"] <=> a["similarity"]}

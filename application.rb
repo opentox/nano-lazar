@@ -5,8 +5,8 @@ also_reload './nanoparticles.rb'
 
 get '/?' do
   data = JSON.parse(File.read("./data.json"))
-  relevant_features = JSON.parse(File.read("./relevant-features.json"))
-  @example = data[data.keys.sample]["physchem"].select{|f,v| relevant_features.keys.include? f}
+  query_features = JSON.parse(File.read("./query-features.json"))
+  @example = data[data.keys.sample]["physchem"].select{|f,v| query_features.include? f}
   # create a data entry form with @example as default values
 end
 
