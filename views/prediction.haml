@@ -5,6 +5,7 @@
 
   %h3.help-block
     Similar particles
+  
   %hr  
   :javascript 
     $(document).ready(function(){
@@ -12,25 +13,28 @@
         debug: false,
         theme: "bootstrap",
         headerTemplate: '{content} {icon}',
-        widgets: ['uitheme', 'stickyHeaders', 'staticRow'],
+        widgets: ['uitheme', 'stickyHeaders', 'staticRow', 'scroller'],
         widgetOptions: {
+          //scroller_upAfterSort: true,
+          //scroller_jumpToHeader: true,
+          //scroller_height: 600,
+          scroller_fixedColumns: 4,
+          //scroller_addFixedOverlay : false,
+          //scroller_rowHighlight : null,
+          //scroller_barWidth : null,
           stickyHeaders : '',
           stickyHeaders_offset : 0,
           stickyHeaders_cloneId : '-sticky',
-          stickyHeaders_addResizeEvent : true,
-          stickyHeaders_includeCaption : true,
+          //stickyHeaders_addResizeEvent : true,
+          //stickyHeaders_includeCaption : true,
           stickyHeaders_zIndex : 2,
           stickyHeaders_attachTo : null,
           stickyHeaders_xScroll : null,
           stickyHeaders_yScroll : null,
-          stickyHeaders_filteredToTop: true
+          stickyHeaders_filteredToTop: false
         },
         sortList: [[1,1]],
-        widthFixed: false
-      });
-      $("table#physchem").tablesorter({
-        debug: false,
-        theme: "bootstrap",
+        widthFixed: true,
       });
     });
 
@@ -48,95 +52,92 @@
             Tox
           %th
             Physchem
-      %tbody
-        / query
+        / query and match combined
         %tr.static
           / id
           %td
-            %h5 Query
+            - if @prediction[:match]
+              = @prediction[:match].keys[0]
+            - else
+              Query
           / similarity
           %td
-            x
+            - if @prediction[:match]
+              1
+            - else
+              x
           / composition
           %td
-            x
+            - if @prediction[:match]
+              - @prediction[:match].values[0]["composition"].each do |k,v|
+                = k
+                %p= v
+            - else
+              x
           / tox
-          %td
+          %td.tox
             - if @prediction[:prediction]
               - @prediction[:prediction].each do |k,v|
-                %h5 Prediction
+                Prediction
                 %p= k
                 - if v == nil
                   %p 0
                 - else
                   %p= v.round(5)
-            - else
-              x
-          / physchem
-          %td
-            - @input.each do |v|
-              %div{:style=>"display:inline-block;padding-right:20px;"}
-                %h5= v[0].gsub(/\sMean/, '')
-                %p= v[1].round(3)
-        / match
-        - if @prediction[:match]
-          %tr.static
-            / id
-            %td
-              %h5= @prediction[:match].keys[0]
-            / similarity
-            %td
-              %h5 match
-            / composition
-            %td
-              - @prediction[:match].values[0]["composition"].each do |k,v|
-                %h5= k
-                %p= v
-            / tox
-            %td
+            - if @prediction[:match]
               - @prediction[:match].values[0]["tox"].each do |k,v|
-                %h5 Measurement prediction
+                Measurement
                 %p= k
                 %p= v.round(3)
-                - if @prediction[:prediction]
-                  - @prediction[:prediction].each do |k,v|
-                    %h5 Prediction
-                    %p= k
-                    - if v == nil
-                      %p 0
-                    - else
-                      %p= v.round(5)
-            / physchem
-            %td
-              - @prediction[:match].values[0]["physchem"].each do |k,v|
+            - if !@prediction[:prediction] && !@prediction[:match]
+              x
+          / physchem
+          %td.physchem
+            - if @prediction[:match]
+              - sorted = {}
+              - @input.each{|i| sorted[i[0]]=@prediction[:match].values[0]["physchem"][i[0]]}
+              - sorted.each do |k,v|
                 %div{:style=>"display:inline-block;padding-right:20px;"}
-                  %h5= k.gsub(/\sMean/, '')
+                  = k.gsub(/\sMean/, '')
                   %p= v.round(3)
+            - else
+              - @input.each do |v|
+                %div{:style=>"display:inline-block;padding-right:20px;"}
+                  = v[0].gsub(/\sMean/, '')
+                  - if v[1].nil?
+                    %p x
+                  - else
+                    %p= v[1].round(3)
+
+      %tbody
         / neighbors
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             %tr
               / ID
               %td
-                %h5= neighbor["id"]
+                = neighbor["id"]
               / Similarity
               %td
-                %h5= neighbor["similarity"].round(3)
+                = neighbor["similarity"].round(3)
               / Composition
               %td
                 - neighbor["composition"].each do |k,v|
-                  %h5= k
+                  = k
                   %p= v
               / Tox
               %td
                 - neighbor["tox"].each do |k,v|
-                  %h5 Measurement prediction
+                  Measurement
                   %p= k
                   %p= v.round(3)
               / Physchem
-              %td
-                - neighbor["physchem"].each do |k,v|
-                  %div{:style=>"display:inline-block;padding-right:20px;"}
-                    %h5= k.gsub(/\sMean/, '')
-                    %p= v.round(3)
+              %td.physchem
+                %div.neighbor
+                  - sorted = {}
+                  - @input.each{|i| sorted[i[0]]=neighbor["physchem"][i[0]]}
+                  - sorted.each do |k,v|
+                    %div{:style=>"display:inline-block;padding-right:20px;"}
+                      = k.gsub(/\sMean/, '')
+                      %p= v.round(3)
 
