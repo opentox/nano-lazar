@@ -1,4 +1,4 @@
-%div.well
+%div
   %a.btn.btn-xs.btn-default{:href => to('/predict'), :style=>"margin-bottom:1em;"}
     %span.glyphicon.glyphicon-chevron-left
     New Prediction
@@ -13,32 +13,15 @@
         debug: false,
         theme: "bootstrap",
         headerTemplate: '{content} {icon}',
-        widgets: ['uitheme', 'stickyHeaders', 'staticRow', 'scroller'],
+        widgets: ['uitheme', 'staticRow'],
         widgetOptions: {
-          //scroller_upAfterSort: true,
-          //scroller_jumpToHeader: true,
-          //scroller_height: 600,
-          scroller_fixedColumns: 4,
-          //scroller_addFixedOverlay : false,
-          //scroller_rowHighlight : null,
-          //scroller_barWidth : null,
-          stickyHeaders : '',
-          stickyHeaders_offset : 0,
-          stickyHeaders_cloneId : '-sticky',
-          //stickyHeaders_addResizeEvent : true,
-          //stickyHeaders_includeCaption : true,
-          stickyHeaders_zIndex : 2,
-          stickyHeaders_attachTo : null,
-          stickyHeaders_xScroll : null,
-          stickyHeaders_yScroll : null,
-          stickyHeaders_filteredToTop: false
         },
         sortList: [[1,1]],
-        widthFixed: true,
+        widthFixed: false,
       });
     });
 
-  %div.table-responsive
+  #results.table-responsive
     %table.tablesorter{:id=>"neighbors"}
       %thead
         %tr
@@ -50,35 +33,37 @@
             Composition  
           %th
             Tox
-          %th
-            Physchem
+          - @input.each do |key|
+            %th.physchem
+              = key[0].gsub(/\sMean/, '')
+      %tbody
         / query and match combined
         %tr.static
           / id
           %td
             - if @prediction[:match]
-              = @prediction[:match].keys[0]
+              %h5= @prediction[:match].keys[0]
             - else
-              Query
+              %h5 Query
           / similarity
           %td
             - if @prediction[:match]
-              1
+              %h5 1
             - else
-              x
+              %h5 x
           / composition
           %td
             - if @prediction[:match]
               - @prediction[:match].values[0]["composition"].each do |k,v|
-                = k
+                %h5= k
                 %p= v
             - else
-              x
+              %h5 x
           / tox
           %td.tox
             - if @prediction[:prediction]
               - @prediction[:prediction].each do |k,v|
-                Prediction
+                %h5 Prediction
                 %p= k
                 - if v == nil
                   %p 0
@@ -86,58 +71,58 @@
                   %p= v.round(5)
             - if @prediction[:match]
               - @prediction[:match].values[0]["tox"].each do |k,v|
-                Measurement
+                %h5 Measurement
                 %p= k
                 %p= v.round(3)
             - if !@prediction[:prediction] && !@prediction[:match]
-              x
+              %h5 x
           / physchem
-          %td.physchem
-            - if @prediction[:match]
-              - sorted = {}
-              - @input.each{|i| sorted[i[0]]=@prediction[:match].values[0]["physchem"][i[0]]}
-              - sorted.each do |k,v|
+          - if @prediction[:match]
+            - sorted = {}
+            - @input.each{|i| sorted[i[0]]=@prediction[:match].values[0]["physchem"][i[0]]}
+            - sorted.each do |k,v|
+              %td.physchem
                 %div{:style=>"display:inline-block;padding-right:20px;"}
-                  = k.gsub(/\sMean/, '')
+                  /= k.gsub(/\sMean/, '')
                   %p= v.round(3)
-            - else
-              - @input.each do |v|
+          - else
+            - @input.each do |v|
+              %td.physchem
                 %div{:style=>"display:inline-block;padding-right:20px;"}
-                  = v[0].gsub(/\sMean/, '')
+                  //= v[0].gsub(/\sMean/, '')
                   - if v[1].nil?
                     %p x
                   - else
                     %p= v[1].round(3)
 
-      %tbody
         / neighbors
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             %tr
               / ID
               %td
-                = neighbor["id"]
+                %h5= neighbor["id"]
               / Similarity
               %td
-                = neighbor["similarity"].round(3)
+                %h5= neighbor["similarity"].round(3)
               / Composition
               %td
                 - neighbor["composition"].each do |k,v|
-                  = k
+                  %h5= k
                   %p= v
               / Tox
               %td
                 - neighbor["tox"].each do |k,v|
-                  Measurement
+                  %h5 Measurement
                   %p= k
                   %p= v.round(3)
               / Physchem
-              %td.physchem
-                %div.neighbor
-                  - sorted = {}
-                  - @input.each{|i| sorted[i[0]]=neighbor["physchem"][i[0]]}
-                  - sorted.each do |k,v|
+              - sorted = {}
+              - @input.each{|i| sorted[i[0]]=neighbor["physchem"][i[0]]}
+              - sorted.each do |k,v|
+                %td.physchem
+                  %div
                     %div{:style=>"display:inline-block;padding-right:20px;"}
-                      = k.gsub(/\sMean/, '')
+                      /= k.gsub(/\sMean/, '')
                       %p= v.round(3)
 

@@ -1,4 +1,9 @@
-.neighbor {
+body {
+  overflow: scroll;
+}
+#results {
+  height: 500px;
+  overflow:scroll;
 }
 .tablesorter tbody tr td {
   padding: 8px;
@@ -10,10 +15,10 @@
   vertical-align: middle;
 }
 .tablesorter thead tr 
-  td.physchem {
+  th.physchem {
     white-space: nowrap;
     min-width: 60px;}
-  td.tox {
+  th.tox {
     white-space: nowrap;}
 .tablesorter tbody tr 
   td.physchem {
@@ -21,12 +26,6 @@
     min-width: 60px;}
   td.tox {
     white-space: nowrap;}
-  td {
-  padding: 4px 18px 4px 4px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 20px;}
-
-.tablesorter thead tr.static td {
-  background-color: #99cc00;
+.tablesorter tbody tr.static td {
+  background-color: #CCFFCC;
 }
