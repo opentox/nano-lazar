@@ -9,20 +9,27 @@
   %hr  
   :javascript 
     $(document).ready(function(){
-      $("table#neighbors").tablesorter({
+      $(".tablesorter").tablesorter({
         debug: false,
         theme: "bootstrap",
         headerTemplate: '{content} {icon}',
-        widgets: ['uitheme', 'staticRow'],
+        widgets: ['uitheme', 'staticRow', 'scroller'],
         widgetOptions: {
+          scroller_upAfterSort: true,
+          scroller_jumpToHeader: true,
+          scroller_height : 300,
+          scroller_fixedColumns : 4,
+          scroller_addFixedOverlay : false,
+          scroller_barWidth : null
         },
         sortList: [[1,1]],
         widthFixed: false,
       });
     });
 
-  #results.table-responsive
-    %table.tablesorter{:id=>"neighbors"}
+
+  #neighbors
+    %table.tablesorter{:id=>"fixed-columns-table"}
       %thead
         %tr
           %th
@@ -125,4 +132,3 @@
                     %div{:style=>"display:inline-block;padding-right:20px;"}
                       /= k.gsub(/\sMean/, '')
                       %p= v.round(3)
-
