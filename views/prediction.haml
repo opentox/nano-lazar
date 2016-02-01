@@ -11,9 +11,9 @@
     $(document).ready(function(){
       $(".tablesorter").tablesorter({
         debug: false,
-        theme: "bootstrap",
+        //theme: "bootstrap",
         headerTemplate: '{content} {icon}',
-        widgets: ['uitheme', 'staticRow', 'scroller'],
+        widgets: ['filter', 'staticRow', 'scroller'],
         widgetOptions: {
           scroller_upAfterSort: true,
           scroller_jumpToHeader: true,
@@ -75,9 +75,10 @@
                 - if v == nil
                   %p 0
                 - else
-                  %p= v.round(5)
+                  %h5= v.round(5)
             - if @prediction[:match]
               - @prediction[:match].values[0]["tox"].each do |k,v|
+                %hr
                 %h5 Measurement
                 %p= k
                 %p= v.round(3)
