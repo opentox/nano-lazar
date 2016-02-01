@@ -1,29 +1,29 @@
 .. |date| date::
 
 
-
 =============================================================
 Read across toxicity predictions with nano-lazar
 =============================================================
 
 .. class:: center
 
-  Christoph Helma
+  Christoph Helma, Denis Gebele, Micha Rautenberg
 
   in silico toxicology gmbh
 
   .. image:: http://www.enanomapper.net/sites/all/themes/theme807/logo.png
     :align: center
 
-Requirements
-============
+Requirements for nanoparticle read-across
+=========================================
 
-- Nanoparticle characterisation
-- Toxicity measurements
+.. class:: incremental
 
+  - Nanoparticle characterisation
+  - Toxicity measurements
 
-eNanoMapper data import
-=======================
+eNanoMapper particle characterisation
+=====================================
 
 .. class:: incremental
 
@@ -38,52 +38,61 @@ eNanoMapper toxicity endpoints
 
 .. class:: incremental
 
-- Toxicity endpoints: 41
-- Toxicity endpoints with more than one measurement value: 22
-- Toxicity endpoints with more than 10 measurements: 2
+  - Toxicity endpoints: 41
+  - Toxicity endpoints with more than one measurement value: 22
+  - Toxicity endpoints with more than 10 measurements: 2
 
 Selected data
 =============
 
 Protein corona dataset Au particles (106 particles)
-Toxicity endpoint:
+Toxicity endpoint: Net cell association (A549 cell line)
 
 Read across procedure
 =====================
 
 .. class:: incremental
 
-- Identify relevant fragments (significant correlation with toxicity)
-  TODO list of fragments, number
-- Calculate similarities (weighted cosine similarity, correlation coefficients = weights)
-- Identify neighbors (particles with more than 0.95 similarity)
-- Calculate prediction (weighted average from neighbors, similarities = weights)
+  - Identify relevant properties (statistically significant correlation with toxicity: 14 from 30 properties)
+  - Calculate similarities (weighted cosine similarity with correlation coefficients as weights)
+  - Identify neighbors (particles with similarity > 0.95)
+  - Calculate prediction (weighted average from neighbors with similarities as weights)
 
-Future development
-==================
+  Algorithms for feature selection, similarity calculation and predictions may change in the future.
+
+Future development (I)
+======================
 
 - Validation of predictions
 - Applicability domain/reliability of predictions
 
 - Accuracy improvements:
+
   - additional data
   - feature selection
   - similarity calculation
   - predictions (local regression models)
 
+Future development (I)
+======================
+
 - Usability improvements:
+
   - additional data (extension of applicability domain, additional endpoints and chemistries)
   - inclusion of ontologies
-  - descriptor calculation directly from core and coating chemistries
+  - inclusion of protein corona characterisation?
+  - particle characterisation without experimental data
 
-Webinterface
-============
+    - descriptor calculation from core and coating chemistries
+    - ontological descriptors 
 
-https://nano-lazar.in-silico.ch/predict
+nano-lazar
+=====================
 
-Your recommendations?
+:Webinterface: https://nano-lazar.in-silico.ch/predict
+:Presentation: https://nano-lazar.in-silico.ch/predict/enm-workshop.html
+:Source code: https://github.com/enanomapper/nano-lazar-gui
+:Issues: https://github.com/enanomapper/nano-lazar-gui/issues
 
-Source code
-===========
+Your comments, ideas, recommendations?
 
-https://github.com/opentox/nano-lazar
