@@ -9,10 +9,6 @@ get '/?' do
   redirect to('/predict') 
 end
 
-get '/enm-workshop' do
-  File.read(File.join('public', 'presentation', 'enm-workshop.html'))
-end
-
 get '/predict/?' do
   data = JSON.parse(File.read("./data.json"))
   query_features = JSON.parse(File.read("./query-features.json"))
