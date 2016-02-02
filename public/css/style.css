@@ -1,16 +1,13 @@
 .tablesorter thead tr 
-  th {
-    border: 1px solid black;}
-.tablesorter thead tr 
   th.physchem {
     min-width: 60px;}
   th.tox {
-    background-color: #CCFFCC !important}
+    background-color: #ffcc80 !important}
 .tablesorter tbody tr 
   td.physchem {
     min-width: 60px;}
   td.tox {
-    background-color: #CCFFCC }
+    background-color: #ffcc80 }
 .tablesorter tbody tr.static td {
   background-color: #CCFFCC;
 }

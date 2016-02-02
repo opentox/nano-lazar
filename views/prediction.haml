@@ -35,7 +35,9 @@
           %th
             Composition  
           %th.tox
-            Toxicity
+            Toxicity 
+            %br 
+            Net cell association [mL/ug(Mg)]
           - @input.each do |key|
             %th.physchem
               = key[0].gsub(/\sMean/, '')
@@ -77,19 +79,19 @@
             - if @prediction[:prediction]
               - @prediction[:prediction].each do |k,v|
                 %h5 Prediction
-                %p= k.split.drop(1).join(" ")[1..-2]
+                -#%p= k.split.drop(1).join(" ")[1..-2]
                 - if v == nil
-                  %p 0
+                  %p not available
                 - else
                   %h5= v.round(5)
             - if @prediction[:match]
               - @prediction[:match].values[0]["tox"].each do |k,v|
                 %hr
                 %h5 Measurement
-                %p= k.split.drop(1).join(" ")[1..-2]
+                -#%p= k.split.drop(1).join(" ")[1..-2]
                 %p= v.round(3)
             - if !@prediction[:prediction] && !@prediction[:match]
-              %h5 x
+              %h5 not available
           / physchem
           - if @prediction[:match]
             - sorted = {}
@@ -138,7 +140,7 @@
               %td.tox
                 - neighbor["tox"].each do |k,v|
                   %h5 Measurement
-                  %p= k.split.drop(1).join(" ")[1..-2]
+                  -#%p= k.split.drop(1).join(" ")[1..-2]
                   %p= v.round(3)
               / Physchem
               - sorted = {}
