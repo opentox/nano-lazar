@@ -90,9 +90,9 @@ nano-lazar
 =====================
 
 :Webinterface: https://nano-lazar.in-silico.ch/predict
-:Presentation: https://nano-lazar.in-silico.ch/predict/enm-workshop.html
-:Source code: https://github.com/enanomapper/nano-lazar-gui
-:Issues: https://github.com/enanomapper/nano-lazar-gui/issues
+:Presentation: https://nano-lazar.in-silico.ch/enm-workshop.html
+:Source code: https://github.com/enanomapper/nano-lazar
+:Issues: https://github.com/enanomapper/nano-lazar/issues
 
 Your comments, ideas, recommendations?
 
