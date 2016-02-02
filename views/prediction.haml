@@ -11,25 +11,21 @@
     $(document).ready(function(){
       $(".tablesorter").tablesorter({
         debug: false,
-        //theme: "bootstrap",
+        theme: "bootstrap",
         headerTemplate: '{content} {icon}',
-        widgets: ['filter', 'staticRow', 'scroller'],
+        widgets: ['uitheme', 'staticRow', 'stickyHeaders'],
         widgetOptions: {
-          scroller_upAfterSort: true,
-          scroller_jumpToHeader: true,
-          scroller_height : 300,
-          scroller_fixedColumns : 4,
-          scroller_addFixedOverlay : false,
-          scroller_barWidth : null
+          stickyHeaders_xScroll : null
         },
         sortList: [[1,1]],
         widthFixed: false,
       });
+      $('#neighbors').doubleScroll();
     });
 
 
-  #neighbors
-    %table.tablesorter{:id=>"fixed-columns-table"}
+  #neighbors.table-responsive
+    %table.tablesorter
       %thead
         %tr
           %th
@@ -38,8 +34,10 @@
             Similarity
           %th
             Composition  
-          %th
-            Tox
+          %th.tox
+            Toxicity 
+            %br 
+            Net cell association [mL/ug(Mg)]
           - @input.each do |key|
             %th.physchem
               = key[0].gsub(/\sMean/, '')
@@ -49,7 +47,8 @@
           / id
           %td
             - if @prediction[:match]
-              %h5= @prediction[:match].keys[0]
+              %a{:href=> $ambit_search+@prediction[:match].keys[0], :rel=>"external"}
+                %h5= @prediction[:match].keys[0]
             - else
               %h5 Query
           / similarity
@@ -61,9 +60,18 @@
           / composition
           %td
             - if @prediction[:match]
+              - surfaceModifier = {}
+              - surfaceModifier["Surface modifier"] = [@prediction[:match].values[0]["composition"]["Surface modifier1"], @prediction[:match].values[0]["composition"]["Surface modifier2"]] 
+              - @prediction[:match].values[0]["composition"].delete("Surface modifier1")
+              - @prediction[:match].values[0]["composition"].delete("Surface modifier2")
+              - @prediction[:match].values[0]["composition"].merge!(surfaceModifier)
               - @prediction[:match].values[0]["composition"].each do |k,v|
                 %h5= k
-                %p= v
+                - if v.class == Array
+                  - v.compact.each do |value|
+                    %p= value
+                - else
+                  %p= v
             - else
               %h5 x
           / tox
@@ -71,19 +79,19 @@
             - if @prediction[:prediction]
               - @prediction[:prediction].each do |k,v|
                 %h5 Prediction
-                %p= k
+                -#%p= k.split.drop(1).join(" ")[1..-2]
                 - if v == nil
-                  %p 0
+                  %p not available
                 - else
                   %h5= v.round(5)
             - if @prediction[:match]
               - @prediction[:match].values[0]["tox"].each do |k,v|
                 %hr
                 %h5 Measurement
-                %p= k
+                -#%p= k.split.drop(1).join(" ")[1..-2]
                 %p= v.round(3)
             - if !@prediction[:prediction] && !@prediction[:match]
-              %h5 x
+              %h5 not available
           / physchem
           - if @prediction[:match]
             - sorted = {}
@@ -109,20 +117,30 @@
             %tr
               / ID
               %td
-                %h5= neighbor["id"]
+                %a{:href=> $ambit_search+neighbor["id"], :rel=>"external"}
+                  %h5= neighbor["id"]
               / Similarity
               %td
                 %h5= neighbor["similarity"].round(3)
               / Composition
               %td
+                - surfaceModifier = {}
+                - surfaceModifier["Surface modifier"] = [neighbor["composition"]["Surface modifier1"], neighbor["composition"]["Surface modifier2"]] 
+                - neighbor["composition"].delete("Surface modifier1")
+                - neighbor["composition"].delete("Surface modifier2")
+                - neighbor["composition"].merge!(surfaceModifier)
                 - neighbor["composition"].each do |k,v|
                   %h5= k
-                  %p= v
+                  - if v.class == Array
+                    - v.compact.each do |value|
+                      %p= value
+                  - else
+                    %p= v
               / Tox
-              %td
+              %td.tox
                 - neighbor["tox"].each do |k,v|
                   %h5 Measurement
-                  %p= k
+                  -#%p= k.split.drop(1).join(" ")[1..-2]
                   %p= v.round(3)
               / Physchem
               - sorted = {}
