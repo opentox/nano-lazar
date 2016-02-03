@@ -45,7 +45,7 @@ eNanoMapper toxicity endpoints
 Selected data
 =============
 
-Protein corona dataset Au particles (106 particles)
+Protein corona dataset Au particles (105 particles)
 Toxicity endpoint: Net cell association (A549 cell line)
 
 Read across procedure
