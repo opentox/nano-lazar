@@ -1,7 +1,7 @@
 require 'json'
 require_relative './nanoparticles.rb'
 
-$ambit_search = "https://apps.ideaconsult.net/enanomapper/substance?type=name&search="
+$ambit_search = "http://data.enanomapper.net/substance?type=name&search="
 
 configure :development do
   $logger = Logger.new(STDOUT)
