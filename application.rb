@@ -1,4 +1,5 @@
 require 'json'
+require 'rdiscount'
 require_relative './nanoparticles.rb'
 
 $ambit_search = "http://data.enanomapper.net/substance?type=name&search="
@@ -17,6 +18,11 @@ get '/predict/?' do
   @example = data[data.keys.sample]["physchem"].select{|f,v| query_features.include? f}
   #@json_example = JSON.pretty_generate(@example)
   haml :predict
+end
+
+get '/license' do
+  @license = RDiscount.new(File.read("LICENSE.md")).to_html
+  haml :license, :layout => false
 end
 
 post '/predict/?' do

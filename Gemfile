@@ -3,3 +3,4 @@ gemspec
 gem "sinatra"
 gem "haml"
 gem "rserve-client"
+gem "rdiscount"

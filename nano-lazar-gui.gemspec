@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
 
   s.add_runtime_dependency "sinatra"
+  s.add_runtime_dependency "rdiscount"
   s.add_runtime_dependency "haml"
   s.add_runtime_dependency "unicorn"
 end
