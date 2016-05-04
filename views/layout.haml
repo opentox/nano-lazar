@@ -22,17 +22,21 @@
     %noscript
       %div{ :style=>"width: 22em; position: absolute; left: 50%; margin-left: -11em; color: red; background-color: white; border: 1px solid red; padding: 4px; font-family: sans-serif"}
       Your web browser must have JavaScript enabled in order for this application to display correctly.
-    %header.page-header{:style=>"margin:20px 0 20px;"}
+    %header.page-header{:style=>"margin:20px 0 20px;text-align:justify;display:inline-block;width:100%;"}
       %div.row
         %div.col-sm-2
           %a{:href=> to("/predict")}
-            %img.media-object{:src=>"/images/ist_logo.png", :alt=>"logo_ist", :style=>"margin:0 3em 0 2em;"}
-        %div.col-sm-6
-          %h1.media-heading{:style=>"margin: 0 0 0 1em;"} nano-lazar toxicity predictions
+            %img.media-object{:src=>"/images/IST_logo_s.png", :alt=>"logo_ist", :width=>"150px", :heigth=>"150px", :style=>"margin:0 0 0 2em;"}
         %div.col-sm-2
           %a{:href=> "http://www.enanomapper.net"}
-            %img.media-object{:src=>"/images/enm_logo.png", :width=>"200px", :heigth=>"200px", :alt=>"logo_enm", :style=>"margin:0 3em 0 2em;"}
-    
+            %img.media-object{:src=>"/images/enm_logo.png", :width=>"200px", :heigth=>"200px", :alt=>"logo_enm", :style=>"margin:0 3em 0 0;"}
+        %div.col-sm-6
+          %h1.media-heading{:style=>"margin: 0 0 0 1em;"} nano-lazar toxicity predictions
+        %div.col-md-2
+          %h1.media-heading{:style=>"margin: 0 0 0 1em;"}
+            %small
+              %a{:href=>"https://lazar.in-silico.ch/predict"} lazar
+
     %div.container-fluid
       Problems, bugs, ideas for improvements ? Please report at our
       %a{:href => 'https://github.com/enanomapper/nano-lazar/issues', :rel => "external"} issue tracker
