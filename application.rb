@@ -13,6 +13,7 @@ get '/?' do
 end
 
 get '/predict/?' do
+  @version = File.read("VERSION").chomp
   data = JSON.parse(File.read("./data.json"))
   query_features = JSON.parse(File.read("./query-features.json"))
   @example = data[data.keys.sample]["physchem"].select{|f,v| query_features.include? f}
