@@ -1,23 +1,102 @@
+:javascript
+  function showcircle() {
+    $("img.circle").show();
+  };
+
 %div.well
-  %form{:role=>"form", :action=> to("/predict"), :method=>"post"}
-    %h3.help-block
-      Please characterise a nanoparticle
-    %hr
-    #input
-    - size = @example.size
-    %div.form-group
-      %h5 Core
-      %input.input-sm.form-control{:id=>"Au",:type=>"text",:name=>"input_value_Au",:value=>"[Au]", :disabled=>"true"}
-    - @example.each_with_index do |v,id|
-      - id = id + 1
-      - key = v[0]
-      - val = v[1]
-      %h5= key.gsub(/\sMean/, '')
-      %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>key}
-      %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val}
-    %input.form-control{:id=>"example",:type=>"hidden",:name=>"size",:value=>size}
-    %hr
-    #predict
-      %button.btn.btn-success{:type=>"submit"} 
-        Find similar nano particles
-        %span.glyphicon.glyphicon-chevron-right
+  %h3.help-block
+    Select an endpoint:
+  #tabs
+    %ul.nav.nav-tabs{:id=>"modelTab", :role=>"tablist"}
+      - @prediction_models.each_with_index do |m, idx|
+        %li{:class => ("active" if idx == 0)}
+          %a{:href => "#model_#{idx}", :id => "linkTab#{idx}", data: {toggle:"tab"}}
+            = "#{idx+1}. #{m.model.feature_selection_algorithm_parameters[:category].nil? ? "P-CHEM & Proteomics" : "P-CHEM" }"
+    %div.tab-content
+      - @prediction_models.each_with_index do |m, idx|
+        - m[:pc_model] ? example = @example_pc : example = @example_pcp
+        #model.tab-pane{:id=>"#{idx}", :class => ("active" if idx == 0)}
+          %b Model:
+          %br
+          Name:
+          = m.model.name
+          %br
+          Type: regression
+          %br
+          Source:
+          %a{:href=>"#{m.source}", :alt=>"source", :rel=>"external"}
+            = m.source
+          %br
+          Species:
+          = m.species
+          %br
+          Training nanoparticles:
+          = m.model.training_dataset.nanoparticles.size
+          %br
+          Endpoint:
+          = m.endpoint
+          %br
+          Unit:
+          = m.unit
+          %p
+          - cv = OpenTox::CrossValidation.find(m.repeated_crossvalidation_id)
+          %b Independent crossvalidations (log2 transformed):
+          - crossvalidations =[]
+          - m.repeated_crossvalidation.crossvalidation_ids.each{|cv| c = OpenTox::Validation::CrossValidation.find(cv); crossvalidations << c}
+          %div.row{:id=>"validations#{m.id}", :style=>"background-color:#f5f5f5;"}
+            - crossvalidations.each do |cv|
+              %span.col-xs-4.col-sm-4.col-md-4.col-lg-4
+                = "Num folds:\t"
+                = cv.folds
+                %br
+                = "Num instances:\t"
+                = cv.nr_instances
+                %br
+                = "Num unpredicted"
+                = cv.nr_unpredicted
+                %br
+                = "Root mean squared error:\t"
+                = cv.rmse.round(3) if cv.rmse
+                %br
+                = "Mean absolute error:\t"
+                = cv.mae.round(3) if cv.mae
+                %br 
+                = "R square:\t"
+                = cv.r_squared.round(3) if cv.r_squared
+          %br
+          %hr
+          %form{:id=>idx, :role=>"form", :action=> to("/predict"), :method=>"post"}
+            %h3.help-block
+              Please characterise a nanoparticle:
+            #input
+            %div.form-group
+              %h5 Core
+              %input.input-sm.form-control{:id=>"core_name",:type=>"text",:name=>"core_name",:value=>example.core["name"], :disabled=>"true"}
+            - example.physchem_descriptors.each_with_index do |v,id|
+              - feature = OpenTox::Feature.find_by(:id => v[0])
+              - name = feature.name
+              - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
+                - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
+              - else
+                - name = feature.name
+              - val = v[1]
+              - id = id + 1
+              %h5= name
+              %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
+              %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val[0]}
+              %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
+              %input.input-sm.form-control{:id=>id,:type=>"hidden",:name=>"input_value_#{id}",:value=>val[0]}
+              %input.form-control{:id=>"example_id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+              %input.form-control{:id=>"core",:type=>"hidden",:name=>"core",:value=>"#{example.core}"}
+              %input.form-control{:id=>"coating",:type=>"hidden",:name=>"coating",:value=>example.coating}
+              %input.form-control{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
+              - example_pc = example.physchem_descriptors
+              %input.form-control{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example_pc}"}
+              - size = example.physchem_descriptors.size
+              %input.form-control{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+            %hr
+            #predict
+              %button.btn.btn-success{:id=>"submitbutton", :type=>"submit", :onclick=>"showcircle();"} 
+                Find similar nano particles
+                %span.glyphicon.glyphicon-chevron-right{:id=>"span"}
+              %img{:src=>"/images/wait30trans.gif", :id=>"circle", :class=>"circle", :alt=>"wait", :style=>"display:none;"}

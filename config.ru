@@ -1,3 +1,4 @@
+ENV["LAZAR_ENV"] = "development"
 SERVICE = "nano-lazar-gui"
 require 'bundler'
 Bundler.require

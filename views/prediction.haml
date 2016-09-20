@@ -25,7 +25,7 @@
 
 
   #neighbors.table-responsive
-    %table.tablesorter
+    %table.tablesorter{:style => "max-width:100%;white-space:nowrap;"}
       %thead
         %tr
           %th
@@ -39,58 +39,60 @@
             %br 
             Net cell association [mL/ug(Mg)]
           - @input.each do |key|
+            - feature = OpenTox::Feature.find_by(:id=>key[0])
+            - name = feature.name
+            - if !feature[:conditions]["MEDIUM"].blank?
+              - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
+            - else
+              - name = feature.name
             %th.physchem
-              = key[0].gsub(/\sMean/, '')
+              = name
       %tbody
         / query and match combined
         %tr.static
           / id
           %td
-            - if @prediction[:match]
-              %a{:href=> $ambit_search+@prediction[:match].keys[0], :rel=>"external"}
-                %h5= @prediction[:match].keys[0]
+            - if @match
+              %a{:href=> $ambit_search+@name, :rel=>"external"}
+                %h5= @name
             - else
               %h5 Query
           / similarity
           %td
-            - if @prediction[:match]
+            - if @match
               %h5 1
             - else
               %h5 x
           / composition
           %td
-            - if @prediction[:match]
-              - surfaceModifier = {}
-              - surfaceModifier["Surface modifier"] = [@prediction[:match].values[0]["composition"]["Surface modifier1"], @prediction[:match].values[0]["composition"]["Surface modifier2"]] 
-              - @prediction[:match].values[0]["composition"].delete("Surface modifier1")
-              - @prediction[:match].values[0]["composition"].delete("Surface modifier2")
-              - @prediction[:match].values[0]["composition"].merge!(surfaceModifier)
-              - @prediction[:match].values[0]["composition"].each do |k,v|
-                %h5= k
-                - if v.class == Array
-                  - v.compact.each do |value|
-                    %p= value
-                - else
-                  %p= v
+            - if @match
+              %h5 Core
+              = "["+@nanoparticle[:core]["name"]+"]"
+              %h5 Coating
+              = @nanoparticle[:coating][0]["name"]
             - else
               %h5 x
           / tox
           %td.tox
-            - if @prediction[:prediction]
-              - @prediction[:prediction].each do |k,v|
-                %h5 Prediction
-                -#%p= k.split.drop(1).join(" ")[1..-2]
-                - if v == nil
-                  %p not available
-                - else
-                  %h5= v.round(5)
-            - if @prediction[:match]
-              - @prediction[:match].values[0]["tox"].each do |k,v|
-                %hr
-                %h5 Measurement
-                -#%p= k.split.drop(1).join(" ")[1..-2]
-                %p= v.round(3)
-            - if !@prediction[:prediction] && !@prediction[:match]
+            - if @prediction[:value]
+              %h5 Prediction:
+              = @prediction[:value].round(3)
+            - if @prediction[:rmse]
+              %h5 Rmse:
+              = @prediction[:rmse].round(3)
+            - if @prediction[:r_squared]
+              %h5 R_squared:
+              = @prediction[:r_squared].round(3)
+            - if @prediction[:prediction_interval]
+              %h5 95% Prediction interval:
+              - interval = @prediction[:prediction_interval].nil? ? " - - " : @prediction[:prediction_interval].collect{|i| i.round(2)}
+              = "#{interval[0]} - #{interval[1]}"
+            - if @prediction[:measurements]
+              %hr
+              %h5 Measurement
+              - @prediction[:measurements].each do |m|
+                %p= m
+            - if !@prediction[:value] && !@prediction[:measurements]
               %h5 not available
           / physchem
           - if @prediction[:match]
@@ -99,55 +101,42 @@
             - sorted.each do |k,v|
               %td.physchem
                 %div{:style=>"display:inline-block;padding-right:20px;"}
-                  /= k.gsub(/\sMean/, '')
-                  %p= v.round(3)
+                  %p= v[0].round(3)
           - else
             - @input.each do |v|
               %td.physchem
                 %div{:style=>"display:inline-block;padding-right:20px;"}
-                  //= v[0].gsub(/\sMean/, '')
                   - if v[1].nil?
                     %p x
                   - else
-                    %p= v[1].round(3)
+                    %p= v[1][0].round(3)
 
         / neighbors
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
+            - nano = OpenTox::Nanoparticle.find(neighbor["_id"])
+            - pc_descriptors = nano.physchem_descriptors.delete_if{|k,v| feature = OpenTox::Feature.find_by(:id => k); feature.category != "P-CHEM"}
             %tr
               / ID
               %td
-                %a{:href=> $ambit_search+neighbor["id"], :rel=>"external"}
-                  %h5= neighbor["id"]
+                %a{:href=> $ambit_search+nano.name, :rel=>"external"}
+                  %h5= nano.name
               / Similarity
               %td
                 %h5= neighbor["similarity"].round(3)
               / Composition
               %td
-                - surfaceModifier = {}
-                - surfaceModifier["Surface modifier"] = [neighbor["composition"]["Surface modifier1"], neighbor["composition"]["Surface modifier2"]] 
-                - neighbor["composition"].delete("Surface modifier1")
-                - neighbor["composition"].delete("Surface modifier2")
-                - neighbor["composition"].merge!(surfaceModifier)
-                - neighbor["composition"].each do |k,v|
-                  %h5= k
-                  - if v.class == Array
-                    - v.compact.each do |value|
-                      %p= value
-                  - else
-                    %p= v
+                %h5 Core
+                = "["+nano[:core]["name"]+"]"
+                %h5 Coating
+                = nano[:coating][0]["name"]
               / Tox
               %td.tox
-                - neighbor["tox"].each do |k,v|
-                  %h5 Measurement
-                  -#%p= k.split.drop(1).join(" ")[1..-2]
-                  %p= v.round(3)
+                %h5 Measurement
+                %p= neighbor["measurements"][0]
               / Physchem
-              - sorted = {}
-              - @input.each{|i| sorted[i[0]]=neighbor["physchem"][i[0]]}
-              - sorted.each do |k,v|
+              - @input.each do |k,v|
                 %td.physchem
                   %div
                     %div{:style=>"display:inline-block;padding-right:20px;"}
-                      /= k.gsub(/\sMean/, '')
-                      %p= v.round(3)
+                      %p= v[0].round(3) unless v.nil?

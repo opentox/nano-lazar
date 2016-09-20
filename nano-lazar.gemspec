@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.files       = `git ls-files`.split("\n")
   s.required_ruby_version = '>= 2.0.0'
 
+  s.add_runtime_dependency "lazar"
   s.add_runtime_dependency "sinatra"
   s.add_runtime_dependency "rdiscount"
   s.add_runtime_dependency "haml"
