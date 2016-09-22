@@ -38,7 +38,7 @@
             Toxicity 
             %br 
             Net cell association [mL/ug(Mg)]
-          - @input.each do |key|
+          - @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
             - feature = OpenTox::Feature.find_by(:id=>key[0])
             - name = feature.name
             - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
@@ -73,7 +73,12 @@
               = @nanoparticle[:coating][0]["name"]
               %br
             - else
-              %h5.th5 x
+              %h5.th5 Core:
+              = "["+@nanoparticle[:core]["name"]+"]"
+              %br
+              %h5.th5 Coating:
+              = @nanoparticle[:coating][0]["name"]
+              %br
           / tox
           %td.tox
             - if @prediction[:value]
@@ -93,28 +98,21 @@
               - interval = @prediction[:prediction_interval].nil? ? " - - " : @prediction[:prediction_interval].collect{|i| i.round(2)}
               = "#{interval[0]} - #{interval[1]}"
             - if @prediction[:measurements]
-              %hr
+              %br
+              %br
               %h5.th5 Measurement:
               - @prediction[:measurements].each do |m|
                 = m
             - if !@prediction[:value] && !@prediction[:measurements]
               %h5.th5 not available
           / physchem
-          - if @prediction[:match]
-            - sorted = {}
-            - @input.each{|i| sorted[i[0]]=@prediction[:match].values[0]["physchem"][i[0]]}
-            - sorted.each do |k,v|
-              %td.physchem
-                %div{:style=>"display:inline-block;padding-right:20px;"}
-                  %p= v[0].round(3)
-          - else
-            - @input.each do |v|
-              %td.physchem
-                %div{:style=>"display:inline-block;padding-right:20px;"}
-                  - if v[1].nil?
-                    %p x
-                  - else
-                    %p= v[1][0].round(3)
+          - @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |v|
+            %td.physchem
+              %div{:style=>"display:inline-block;padding-right:20px;"}
+                - if v[1].nil?
+                  %p x
+                - else
+                  %p= v[1][0].round(3)
 
         / neighbors
         - if @prediction[:neighbors]
@@ -142,7 +140,7 @@
                 = neighbor["measurements"][0]
               / Physchem
               -#- @input.each do |k,v|
-              - nano.physchem_descriptors.each do |k,v|
+              - nano.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |k,v|
                 %td.physchem
                   %div
                     %div{:style=>"display:inline-block;padding-right:20px;"}

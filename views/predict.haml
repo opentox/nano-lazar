@@ -64,9 +64,9 @@
                 = "R square:\t"
                 = cv.r_squared.round(3) if cv.r_squared
           %br
-          %b QSAR report
-          %br
-          %a{:href=>to('/qsar-report/'+m.id)} download
+          //%b QSAR report
+          //%br
+          //%a{:href=>to('/qsar-report/'+m.id)} download
           %hr
           %form{:id=>idx, :role=>"form", :action=> to("/predict"), :method=>"post"}
             %h3.help-block
@@ -83,15 +83,18 @@
               %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
               %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
               // input form parameters to transfer
-              %h5 Core
-              %input.input-sm.form-control{:id=>"core",:type=>"text",:name=>"input_core",:value=>example.core["name"]}
+              %div.form-group
+                %label{:for=>"selCore#{idx}"} Core
+                %select.form-control{:id=>"selCore#{idx}", :name=>"input_core",:value=>example.core["name"]}
+                  %option{:selected => ("selected" if example.core["name"] == "Ag")} Ag
+                  %option{:selected => ("selected" if example.core["name"] == "Au")} Au
               %input{:id=>"input_core",:type=>"hidden",:name=>"in_core",:value=>"#{example.core}"}
               %h5 Coating
               %input.input-sm.form-control{:id=>"coating",:type=>"text",:name=>"input_coating",:value=>example.coating[0]["name"]}
               %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
               // prediction model id 
               %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
-            - example.physchem_descriptors.each_with_index do |v,id|
+            - example.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each_with_index do |v,id|
               - feature = OpenTox::Feature.find_by(:id => v[0])
               - name = feature.name
               - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?

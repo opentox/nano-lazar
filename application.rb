@@ -12,7 +12,10 @@ end
 get '/?' do
   redirect to('/predict') 
 end
-
+=begin
+get '/qsar-report/:id' do
+end
+=end
 get '/predict/?' do
   @prediction_models = []
   prediction_models = OpenTox::Model::NanoPrediction.all
@@ -57,7 +60,9 @@ post '/predict/?' do
     # unchanged input = database hit
     nanoparticle = OpenTox::Nanoparticle.find_by(:id => params[:example_id])
     nanoparticle.physchem_descriptors = input_pc
-    @match = true,@nanoparticle = nanoparticle,@name = nanoparticle.name
+    @match = true
+    @nanoparticle = nanoparticle
+    @name = nanoparticle.name
   else
     # changed input = create nanoparticle to predict
     nanoparticle = OpenTox::Nanoparticle.new
@@ -65,6 +70,7 @@ post '/predict/?' do
     nanoparticle.coating = input_coating
     nanoparticle.physchem_descriptors = input_pc
     @match = false
+    @nanoparticle = nanoparticle
   end
   # output
   @input = input_pc
