@@ -11,10 +11,10 @@
       - @prediction_models.each_with_index do |m, idx|
         %li{:class => ("active" if idx == 0)}
           %a{:href => "#model_#{idx}", :id => "linkTab#{idx}", data: {toggle:"tab"}}
-            = "#{idx+1}. #{m.model.feature_selection_algorithm_parameters[:category].nil? ? "P-CHEM & Proteomics" : "P-CHEM" }"
+            = "#{idx+1}. #{m.model.feature_selection_algorithm_parameters[:category].nil? ? "Physchem & Proteomics" : "Physchem" }"
     %div.tab-content
       - @prediction_models.each_with_index do |m, idx|
-        - m[:pc_model] ? example = @example_pc : example = @example_pcp
+        - m[:pc_model] ? (example = @example_pc; type = "pc") : (example = @example_pcp; type = "pcp")
         #model.tab-pane{:id=>"#{idx}", :class => ("active" if idx == 0)}
           %b Model:
           %br
@@ -64,14 +64,33 @@
                 = "R square:\t"
                 = cv.r_squared.round(3) if cv.r_squared
           %br
+          %b QSAR report
+          %br
+          %a{:href=>to('/qsar-report/'+m.id)} download
           %hr
           %form{:id=>idx, :role=>"form", :action=> to("/predict"), :method=>"post"}
             %h3.help-block
               Please characterise a nanoparticle:
             #input
             %div.form-group
+              // type pcp || pc
+              %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
+              // example data to compare
+              %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core}"}
+              %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating}"}
+              %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.physchem_descriptors}"}
+              - size = example.physchem_descriptors.size
+              %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+              %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+              // input form parameters to transfer
               %h5 Core
-              %input.input-sm.form-control{:id=>"core_name",:type=>"text",:name=>"core_name",:value=>example.core["name"], :disabled=>"true"}
+              %input.input-sm.form-control{:id=>"core",:type=>"text",:name=>"input_core",:value=>example.core["name"]}
+              %input{:id=>"input_core",:type=>"hidden",:name=>"in_core",:value=>"#{example.core}"}
+              %h5 Coating
+              %input.input-sm.form-control{:id=>"coating",:type=>"text",:name=>"input_coating",:value=>example.coating[0]["name"]}
+              %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
+              // prediction model id 
+              %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
             - example.physchem_descriptors.each_with_index do |v,id|
               - feature = OpenTox::Feature.find_by(:id => v[0])
               - name = feature.name
@@ -82,18 +101,9 @@
               - val = v[1]
               - id = id + 1
               %h5= name
-              %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
+              // input physchem parameters
               %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val[0]}
-              %input.form-control{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
-              %input.input-sm.form-control{:id=>id,:type=>"hidden",:name=>"input_value_#{id}",:value=>val[0]}
-              %input.form-control{:id=>"example_id",:type=>"hidden",:name=>"example_id",:value=>example.id}
-              %input.form-control{:id=>"core",:type=>"hidden",:name=>"core",:value=>"#{example.core}"}
-              %input.form-control{:id=>"coating",:type=>"hidden",:name=>"coating",:value=>example.coating}
-              %input.form-control{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
-              - example_pc = example.physchem_descriptors
-              %input.form-control{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example_pc}"}
-              - size = example.physchem_descriptors.size
-              %input.form-control{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+              %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
             %hr
             #predict
               %button.btn.btn-success{:id=>"submitbutton", :type=>"submit", :onclick=>"showcircle();"} 

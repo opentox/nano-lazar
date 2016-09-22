@@ -41,7 +41,7 @@
           - @input.each do |key|
             - feature = OpenTox::Feature.find_by(:id=>key[0])
             - name = feature.name
-            - if !feature[:conditions]["MEDIUM"].blank?
+            - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
               - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
             - else
               - name = feature.name
@@ -66,34 +66,39 @@
           / composition
           %td
             - if @match
-              %h5 Core
+              %h5.th5 Core:
               = "["+@nanoparticle[:core]["name"]+"]"
-              %h5 Coating
+              %br
+              %h5.th5 Coating:
               = @nanoparticle[:coating][0]["name"]
+              %br
             - else
-              %h5 x
+              %h5.th5 x
           / tox
           %td.tox
             - if @prediction[:value]
-              %h5 Prediction:
+              %h5.th5 Prediction:
               = @prediction[:value].round(3)
+              %br
             - if @prediction[:rmse]
-              %h5 Rmse:
+              %h5.th5 Rmse:
               = @prediction[:rmse].round(3)
+              %br
             - if @prediction[:r_squared]
-              %h5 R_squared:
+              %h5.th5 R_squared:
               = @prediction[:r_squared].round(3)
+              %br
             - if @prediction[:prediction_interval]
               %h5 95% Prediction interval:
               - interval = @prediction[:prediction_interval].nil? ? " - - " : @prediction[:prediction_interval].collect{|i| i.round(2)}
               = "#{interval[0]} - #{interval[1]}"
             - if @prediction[:measurements]
               %hr
-              %h5 Measurement
+              %h5.th5 Measurement:
               - @prediction[:measurements].each do |m|
-                %p= m
+                = m
             - if !@prediction[:value] && !@prediction[:measurements]
-              %h5 not available
+              %h5.th5 not available
           / physchem
           - if @prediction[:match]
             - sorted = {}
@@ -115,7 +120,7 @@
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             - nano = OpenTox::Nanoparticle.find(neighbor["_id"])
-            - pc_descriptors = nano.physchem_descriptors.delete_if{|k,v| feature = OpenTox::Feature.find_by(:id => k); feature.category != "P-CHEM"}
+            - pc_descriptors = nano.physchem_descriptors.delete_if{|k,v| feature = OpenTox::Feature.find_by(:id => k); feature.category != "P-CHEM"} if @type == "pc"
             %tr
               / ID
               %td
@@ -126,17 +131,19 @@
                 %h5= neighbor["similarity"].round(3)
               / Composition
               %td
-                %h5 Core
+                %h5.th5 Core:
                 = "["+nano[:core]["name"]+"]"
-                %h5 Coating
+                %br
+                %h5.th5 Coating:
                 = nano[:coating][0]["name"]
               / Tox
               %td.tox
-                %h5 Measurement
-                %p= neighbor["measurements"][0]
+                %h5.th5 Measurement:
+                = neighbor["measurements"][0]
               / Physchem
-              - @input.each do |k,v|
+              -#- @input.each do |k,v|
+              - nano.physchem_descriptors.each do |k,v|
                 %td.physchem
                   %div
                     %div{:style=>"display:inline-block;padding-right:20px;"}
-                      %p= v[0].round(3) unless v.nil?
+                      = v[0].round(3) unless v.nil?

@@ -11,3 +11,6 @@
 .tablesorter tbody tr.static td {
   background-color: #CCFFCC;
 }
+.th5 {
+  display: inline;
+}
