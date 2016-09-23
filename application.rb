@@ -1,6 +1,6 @@
 require 'rdiscount'
 $ambit_search = "http://data.enanomapper.net/substance?type=name&search="
-
+$npo_search = "http://bioportal.bioontology.org/search?q=%s&ontologies=NPO&include_properties=false&include_views=false&includeObsolete=false&require_definition=false&exact_match=false&categories="
 
 configure :development do
   $logger = Logger.new(STDOUT)

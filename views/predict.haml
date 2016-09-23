@@ -108,7 +108,10 @@
                 %h5
                   %a{:href=>"http://www.uniprot.org/uniprot/#{name}", :rel=>"external"}= name
               - else
-                %h5= name
+                / prepare name string for npo_search
+                - string = name.split("/").first.downcase.gsub(/%s/, "%20")
+                %h5
+                  %a{:href=>$npo_search % string, :rel=>"external"}= name
               // input physchem parameters
               %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val[0]}
               %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
