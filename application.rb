@@ -22,14 +22,18 @@ get '/predict/?' do
   prediction_models = OpenTox::Model::NanoPrediction.all
   prediction_models.each{|m| m.model[:feature_selection_algorithm_parameters]["category"] == "P-CHEM" ? @prediction_models[0] = m : @prediction_models[1] = m}
   @prediction_models.each_with_index{|m,idx| idx == 0 ? m[:pc_model] = true : m[:pcp_model] = true}
-  nanoparticles = OpenTox::Nanoparticle.all.select{|n| n.core["name"] == "Au" || n.core["name"] == "Ag"}
-  ## helper for preselect nanos with more than 12 pc_descriptors but take too much time for now
-  #example = nanoparticles.collect{|n| n if n.physchem_descriptors.size > 16 && (arr = n.physchem_descriptors.collect{|k,v| OpenTox::Feature.find(k).category == "P-CHEM"}; arr.size > 12 )}.compact
-  example = nanoparticles.collect{|n| n if n.physchem_descriptors.size > 16}.compact
-  pcp = example.sample
+  
+  # collect nanoparticles by training dataset (Ag + Au)
+  dataset = OpenTox::Dataset.find_by(:name=> "Protein Corona Fingerprinting Predicts the Cellular Interaction of Gold and Silver Nanoparticles")
+  nanoparticles = dataset.nanoparticles
+  # select physchem_parameters by relevant_features out of each model
+  @@pc_relevant_features = @prediction_models[0].model.relevant_features.collect{|id, v| OpenTox::Feature.find(id)}
+  @@pcp_relevant_features = @prediction_models[1].model.relevant_features.collect{|id, v| OpenTox::Feature.find(id)}
+  pcp = nanoparticles.sample
+  pcp.physchem_descriptors.delete_if{|id,v| !@@pcp_relevant_features.include?(OpenTox::Feature.find(id))}
   @example_pcp = pcp
-  pc = example.sample
-  pc.physchem_descriptors.delete_if{|k,v| feature = OpenTox::Feature.find_by(:id => k); feature.category != "P-CHEM"}
+  pc = nanoparticles.sample
+  pc.physchem_descriptors.delete_if{|id,v| !@@pc_relevant_features.include?(OpenTox::Feature.find(id))}
   @example_pc = pc
 
   haml :predict
@@ -41,6 +45,8 @@ get '/license' do
 end
 
 post '/predict/?' do
+  
+  # choose the right prediction model
   prediction_model = OpenTox::Model::NanoPrediction.find(params[:prediction_model])
   size = params[:size].to_i
   @type = params[:type]

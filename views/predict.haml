@@ -89,8 +89,8 @@
                   %option{:selected => ("selected" if example.core["name"] == "Ag")} Ag
                   %option{:selected => ("selected" if example.core["name"] == "Au")} Au
               %input{:id=>"input_core",:type=>"hidden",:name=>"in_core",:value=>"#{example.core}"}
-              %h5 Coating
-              %input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
+              //%h5 Coating
+              //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
               %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
               %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
               // prediction model id 

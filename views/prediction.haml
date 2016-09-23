@@ -25,7 +25,8 @@
 
 
   #neighbors.table-responsive
-    %table.tablesorter{:style => "max-width:100%;white-space:nowrap;"}
+    /%table.tablesorter{:style => "max-width:100%;white-space:nowrap;"}
+    %table.tablesorter
       %thead
         %tr
           %th
@@ -34,10 +35,12 @@
             Similarity
           %th
             Composition  
-          %th.tox
+          %th.tox{:style => "max-width:100%;white-space:nowrap;"}
             Toxicity 
             %br 
-            Net cell association [mL/ug(Mg)]
+            Net cell association
+            %br
+            [mL/ug(Mg)]
           - @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
             - feature = OpenTox::Feature.find_by(:id=>key[0])
             - name = feature.name
@@ -54,31 +57,31 @@
           %td
             - if @match
               %a{:href=> $ambit_search+@name, :rel=>"external"}
-                %h5= @name
+                %h5.th5= @name
             - else
-              %h5 Query
+              %h5.th5 Query
           / similarity
           %td
             - if @match
-              %h5 1
+              %h5.th5 1
             - else
-              %h5 x
+              %h5.th5 x
           / composition
           %td
             - if @match
               %h5.th5 Core:
-              = "["+@nanoparticle[:core]["name"]+"]"
-              %br
-              %h5.th5 Coating:
-              = @nanoparticle[:coating][0]["name"]
-              %br
+              %a{:href=>@nanoparticle[:core]["uri"], :rel=>"external"}= "["+@nanoparticle[:core]["name"]+"]"
+              /%br
+              /%h5.th5 Coating:
+              /= @nanoparticle[:coating][0]["name"]
+              /%br
             - else
               %h5.th5 Core:
               = "["+@nanoparticle[:core]["name"]+"]"
-              %br
-              %h5.th5 Coating:
-              = @nanoparticle[:coating][0]["name"]
-              %br
+              /%br
+              /%h5.th5 Coating:
+              /= @nanoparticle[:coating][0]["name"]
+              /%br
           / tox
           %td.tox
             - if @prediction[:value]
@@ -86,19 +89,21 @@
               = @prediction[:value].round(3)
               %br
             - if @prediction[:rmse]
-              %h5.th5 Rmse:
+              %h5.th5
+                %a{:href=>"https://en.wikipedia.org/wiki/Root-mean-square_deviation", :rel=>"external"} RMSE:
               = @prediction[:rmse].round(3)
               %br
             - if @prediction[:r_squared]
-              %h5.th5 R_squared:
+              %h5.th5
+                %a{:href=>"https://en.wikipedia.org/wiki/Coefficient_of_determination", :rel=>"external"}= "R"+"<sup>2</sup>"+":"
               = @prediction[:r_squared].round(3)
               %br
             - if @prediction[:prediction_interval]
-              %h5 95% Prediction interval:
-              - interval = @prediction[:prediction_interval].nil? ? " - - " : @prediction[:prediction_interval].collect{|i| i.round(2)}
+              %h5
+                %a{:href=>"https://en.wikipedia.org/wiki/Prediction_interval", :rel=>"external"} 95% Prediction interval:
+                - interval = @prediction[:prediction_interval].nil? ? " - - " : @prediction[:prediction_interval].collect{|i| i.round(2)}
               = "#{interval[0]} - #{interval[1]}"
             - if @prediction[:measurements]
-              %br
               %br
               %h5.th5 Measurement:
               - @prediction[:measurements].each do |m|
@@ -118,29 +123,28 @@
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             - nano = OpenTox::Nanoparticle.find(neighbor["_id"])
-            - pc_descriptors = nano.physchem_descriptors.delete_if{|k,v| feature = OpenTox::Feature.find_by(:id => k); feature.category != "P-CHEM"} if @type == "pc"
+            - pc_descriptors = nano.physchem_descriptors.delete_if{|id,v| OpenTox::Feature.find(id).category != "P-CHEM"} if @type == "pc"
             %tr
               / ID
               %td
                 %a{:href=> $ambit_search+nano.name, :rel=>"external"}
-                  %h5= nano.name
+                  %h5.th5= nano.name
               / Similarity
               %td
-                %h5= neighbor["similarity"].round(3)
+                %h5.th5= neighbor["similarity"].round(3)
               / Composition
               %td
                 %h5.th5 Core:
-                = "["+nano[:core]["name"]+"]"
+                %a{:href=>nano[:core]["uri"], :rel=> "external"}= "["+nano[:core]["name"]+"]"
                 %br
                 %h5.th5 Coating:
-                = nano[:coating][0]["name"]
+                %a{:href=>nano[:coating][0]["uri"], :rel=>"external"}= nano[:coating][0]["name"]
               / Tox
               %td.tox
                 %h5.th5 Measurement:
                 = neighbor["measurements"][0]
               / Physchem
-              -#- @input.each do |k,v|
-              - nano.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |k,v|
+              - nano.physchem_descriptors.delete_if{|id,v| @type == "pc" ? !@@pc_relevant_features.include?(OpenTox::Feature.find(id)) : !@@pcp_relevant_features.include?(OpenTox::Feature.find(id))}.sort_by{|id,v| OpenTox::Feature.find(id).category}.each do |k,v|
                 %td.physchem
                   %div
                     %div{:style=>"display:inline-block;padding-right:20px;"}
