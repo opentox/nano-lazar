@@ -1,6 +1,7 @@
 require 'rdiscount'
 $ambit_search = "http://data.enanomapper.net/substance?type=name&search="
 
+
 configure :development do
   $logger = Logger.new(STDOUT)
 end
@@ -22,6 +23,8 @@ get '/predict/?' do
   prediction_models.each{|m| m.model[:feature_selection_algorithm_parameters]["category"] == "P-CHEM" ? @prediction_models[0] = m : @prediction_models[1] = m}
   @prediction_models.each_with_index{|m,idx| idx == 0 ? m[:pc_model] = true : m[:pcp_model] = true}
   nanoparticles = OpenTox::Nanoparticle.all.select{|n| n.core["name"] == "Au" || n.core["name"] == "Ag"}
+  ## helper for preselect nanos with more than 12 pc_descriptors but take too much time for now
+  #example = nanoparticles.collect{|n| n if n.physchem_descriptors.size > 16 && (arr = n.physchem_descriptors.collect{|k,v| OpenTox::Feature.find(k).category == "P-CHEM"}; arr.size > 12 )}.compact
   example = nanoparticles.collect{|n| n if n.physchem_descriptors.size > 16}.compact
   pcp = example.sample
   @example_pcp = pcp
