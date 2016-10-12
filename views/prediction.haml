@@ -15,6 +15,8 @@
         headerTemplate: '{content} {icon}',
         widgets: ['uitheme', 'staticRow', 'stickyHeaders'],
         widgetOptions: {
+          stickyHeaders_attachTo: 'neighbors',
+          stickyHeaders_offset: 0,
           stickyHeaders_xScroll : null
         },
         sortList: [[1,1]],
@@ -41,7 +43,8 @@
             Net cell association
             %br
             [mL/ug(Mg)]
-          - @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
+          -#- @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
+          - @input.each{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
             - feature = OpenTox::Feature.find_by(:id=>key[0])
             - name = feature.name
             - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
@@ -88,12 +91,16 @@
               %h5.th5 Prediction:
               = @prediction[:value].round(3)
               %br
-            - if @prediction[:rmse]
+            - if @prediction[:value].blank?
+              %h5.th5 Prediction:
+              = "not available"
+              %br
+            -#- if @prediction[:rmse]
               %h5.th5
                 %a{:href=>"https://en.wikipedia.org/wiki/Root-mean-square_deviation", :rel=>"external"} RMSE:
               = @prediction[:rmse].round(3)
               %br
-            - if @prediction[:r_squared]
+            -#- if @prediction[:r_squared]
               %h5.th5
                 %a{:href=>"https://en.wikipedia.org/wiki/Coefficient_of_determination", :rel=>"external"}= "R"+"<sup>2</sup>"+":"
               = @prediction[:r_squared].round(3)
@@ -111,7 +118,8 @@
             - if !@prediction[:value] && !@prediction[:measurements]
               %h5.th5 not available
           / physchem
-          - @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |v|
+          -#- @input.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each do |v|
+          - @input.each do |v|
             %td.physchem
               %div{:style=>"display:inline-block;padding-right:20px;"}
                 - if v[1].nil?
@@ -123,7 +131,7 @@
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             - nano = OpenTox::Nanoparticle.find(neighbor["_id"])
-            - pc_descriptors = nano.physchem_descriptors.delete_if{|id,v| OpenTox::Feature.find(id).category != "P-CHEM"} if @type == "pc"
+            -#- nano.physchem_descriptors.delete_if{|id,v| OpenTox::Feature.find(id).category != "P-CHEM"} if @type == "pc"
             %tr
               / ID
               %td
@@ -144,8 +152,9 @@
                 %h5.th5 Measurement:
                 = neighbor["measurements"][0]
               / Physchem
-              - nano.physchem_descriptors.delete_if{|id,v| @type == "pc" ? !@@pc_relevant_features.include?(OpenTox::Feature.find(id)) : !@@pcp_relevant_features.include?(OpenTox::Feature.find(id))}.sort_by{|id,v| OpenTox::Feature.find(id).category}.each do |k,v|
+              -#- nano.physchem_descriptors.delete_if{|id,v| @type == "pc" ? !@pc_relevant_features.include?(OpenTox::Feature.find(id)) : !@pcp_relevant_features.include?(OpenTox::Feature.find(id))}.sort_by{|id,v| OpenTox::Feature.find(id).category}.each do |k,v|
+              - nano.physchem_descriptors.delete_if{|id,v| @type == "pc" ? !@pc_relevant_features.include?(OpenTox::Feature.find(id)) : !@pcp_relevant_features.include?(OpenTox::Feature.find(id))}.sort_by{|id,v| @pc_relevant_features.index OpenTox::Feature.find(id)}.each do |k,v|
                 %td.physchem
-                  %div
+                  -#%div
                     %div{:style=>"display:inline-block;padding-right:20px;"}
-                      = v[0].round(3) unless v.nil?
+                  = v[0].round(3) unless v.nil?

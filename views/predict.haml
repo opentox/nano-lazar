@@ -14,7 +14,7 @@
             = "#{idx+1}. #{m.model.feature_selection_algorithm_parameters[:category].nil? ? "Physchem & Proteomics" : "Physchem" }"
     %div.tab-content
       - @prediction_models.each_with_index do |m, idx|
-        - m[:pc_model] ? (example = @example_pc; type = "pc") : (example = @example_pcp; type = "pcp")
+        - m[:pc_model] ? (example = @example_pc; type = "pc"; relevant_features = @pc_relevant_features) : (example = @example_pcp; type = "pcp"; relevant_features = @pcp_relevant_features)
         #model.tab-pane{:id=>"#{idx}", :class => ("active" if idx == 0)}
           %b Model:
           %br
@@ -38,8 +38,20 @@
           %br
           Unit:
           = m.unit
+          %br
+          Prediction algorithm:
+          = m.model.prediction_algorithm.split(".").last.gsub("_"," ")
+          %br
+          Prediction algorithm parameter:
+          = "random forest" if m.model.prediction_algorithm_parameters["method"] == "rf"
+          %br
+          Neighbor algorithm:
+          = m.model.neighbor_algorithm.gsub("_", " ")
+          %br
+          Neighbor algorithm parameter:
+          = "min sim = #{m.model.neighbor_algorithm_parameters["min_sim"]}"
           %p
-          - cv = OpenTox::CrossValidation.find(m.repeated_crossvalidation_id)
+          -#- cv = OpenTox::CrossValidation.find(m.repeated_crossvalidation_id)
           %b Independent crossvalidations (log2 transformed):
           - crossvalidations =[]
           - m.repeated_crossvalidation.crossvalidation_ids.each{|cv| c = OpenTox::Validation::CrossValidation.find(cv); crossvalidations << c}
@@ -55,18 +67,18 @@
                 = "Num unpredicted"
                 = cv.nr_unpredicted
                 %br
-                = "Root mean squared error:\t"
+                %a.ht5{:href=>"https://en.wikipedia.org/wiki/Root-mean-square_deviation", :rel=>"external"} RMSE:
                 = cv.rmse.round(3) if cv.rmse
                 %br
-                = "Mean absolute error:\t"
+                %a.ht5{:href=>"https://en.wikipedia.org/wiki/Mean_absolute_error", :rel=>"external"} MAE:
                 = cv.mae.round(3) if cv.mae
                 %br 
-                = "R square:\t"
+                %a.ht5{:href=>"https://en.wikipedia.org/wiki/Coefficient_of_determination", :rel=>"external"}= "R"+"<sup>2</sup>"+":"
                 = cv.r_squared.round(3) if cv.r_squared
           %br
-          //%b QSAR report
-          //%br
-          //%a{:href=>to('/qsar-report/'+m.id)} download
+          %b QMRF report
+          %p
+          %a.btn.btn-default{:href=>to('/qmrf-report/'+m.id), :rel=>"external"} download
           %hr
           %form{:id=>idx, :role=>"form", :action=> to("/predict"), :method=>"post"}
             %h3.help-block
@@ -79,13 +91,15 @@
               %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core}"}
               %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating}"}
               %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.physchem_descriptors}"}
-              - size = example.physchem_descriptors.size
+              -#- size = example.physchem_descriptors.size
+              - size = relevant_features.size
               %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
               %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
               // input form parameters to transfer
               %div.form-group
                 %label{:for=>"selCore#{idx}"} Core
-                %select.form-control{:id=>"selCore#{idx}", :name=>"input_core",:value=>example.core["name"]}
+                /%p= example.core["name"]
+                %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
                   %option{:selected => ("selected" if example.core["name"] == "Ag")} Ag
                   %option{:selected => ("selected" if example.core["name"] == "Au")} Au
               %input{:id=>"input_core",:type=>"hidden",:name=>"in_core",:value=>"#{example.core}"}
@@ -95,14 +109,20 @@
               %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
               // prediction model id 
               %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
-            - example.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each_with_index do |v,id|
-              - feature = OpenTox::Feature.find_by(:id => v[0])
+            - relevant_features.sort_by{|d| d.category}.each_with_index do |relf,id|
+              -#- example.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each_with_index do |v,id|
+              - feature = relf
+              /%p= feature.id
+              - v = example.physchem_descriptors.find{|id,v| id == feature.id.to_s  }
+              /%p= v
+              -#- feature = OpenTox::Feature.find_by(:id => v[0])
+              -#- feature = v
               - name = feature.name
               - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
                 - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
               - else
                 - name = feature.name
-              - val = v[1]
+              - val = !v.nil? ? v[1] : "-"
               - id = id + 1
               - if feature.category == "Proteomics"
                 %h5
@@ -113,8 +133,10 @@
                 %h5
                   %a{:href=>$npo_search % string, :rel=>"external"}= name
               // input physchem parameters
-              %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>val[0]}
-              %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>v[0]}
+              %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0] if val[0]}", :disabled=>("disabled" if val[0] == "-")}
+              - if val[0] == "-"
+                %input{:id=>id,:type=>"hidden",:name=>"input_value_#{id}",:value=>"-"}
+              %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>feature.id}
             %hr
             #predict
               %button.btn.btn-success{:id=>"submitbutton", :type=>"submit", :onclick=>"showcircle();"} 
