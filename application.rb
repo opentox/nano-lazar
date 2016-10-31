@@ -72,24 +72,6 @@ get '/qmrf-report/:id' do
 end
 #=end
 get '/predict/?' do
-  # temporarily outstanding
-  nos = %w(S40.CIT
-    S40.MES
-    S40.MUTA
-    S40.cPEG5K-SH
-    S40.DDT@DOTAP
-    S40.MAA
-    S40.PLL-SH
-    S40.mPEG5K-SH
-    S40.MBA
-    S40.PVA
-    S40.LA
-    S40.AUT
-    S40.HDA
-    S40.SA
-    S40.nPEG5K-SH
-    S40.MHDA
-  )
   @prediction_models = []
   prediction_models = OpenTox::Model::NanoPrediction.all
   prediction_models.each{|m| m.model[:feature_selection_algorithm_parameters]["category"] == "P-CHEM" ? @prediction_models[0] = m : @prediction_models[1] = m}
@@ -97,28 +79,16 @@ get '/predict/?' do
   @prediction_models.each_with_index{|m,idx| idx == 0 ? m[:pc_model] = true : m[:pcp_model] = true}
   # collect nanoparticles by training dataset (Ag + Au)
   dataset = OpenTox::Dataset.find_by(:name=> "Protein Corona Fingerprinting Predicts the Cellular Interaction of Gold and Silver Nanoparticles")
-  # temporarily delete silver 
-  nanoparticles = dataset.nanoparticles#.delete_if{|n| !nos.include?(n.name)}
+  nanoparticles = dataset.nanoparticles
   
-  # select physchem_parameters by relevant_features out of each model; use @@ for global usage (prediction.haml)
+  # select physchem_parameters by relevant_features for of each model
   @pc_relevant_features = @prediction_models[0].model.relevant_features.collect{|id, v| OpenTox::Feature.find(id)}
   @pcp_relevant_features = @prediction_models[1].model.relevant_features.collect{|id, v| OpenTox::Feature.find(id)}
-  # check for outstanding nanoparticles
   pcp = nanoparticles.sample
-  #while nos.include?(pcp.name)
-  #  pcp = nanoparticles.sample
-  #end
-  # use only relevant features
   pcp.physchem_descriptors.delete_if{|id,v| !@pcp_relevant_features.include?(OpenTox::Feature.find(id))}
   @example_pcp = pcp
   
-  # check for outstanding nanoparticles
   pc = nanoparticles.sample
-  #while nos.include?(pc.name)
-  #  pcp = nanoparticles.sample
-  #end
-  # use only relevant features
-  #pc.physchem_descriptors.delete_if{|id,v| OpenTox::Feature.find(id).category != "P-CHEM"}
   pc.physchem_descriptors.delete_if{|id,v| !@pc_relevant_features.include?(OpenTox::Feature.find(id))}
   @example_pc = pc
 

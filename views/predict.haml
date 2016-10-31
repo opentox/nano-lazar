@@ -51,7 +51,6 @@
           Neighbor algorithm parameter:
           = "min sim = #{m.model.neighbor_algorithm_parameters["min_sim"]}"
           %p
-          -#- cv = OpenTox::CrossValidation.find(m.repeated_crossvalidation_id)
           %b Independent crossvalidations (log2 transformed):
           - crossvalidations =[]
           - m.repeated_crossvalidation.crossvalidation_ids.each{|cv| c = OpenTox::Validation::CrossValidation.find(cv); crossvalidations << c}
@@ -91,7 +90,6 @@
               %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core}"}
               %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating}"}
               %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.physchem_descriptors}"}
-              -#- size = example.physchem_descriptors.size
               - size = relevant_features.size
               %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
               %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
@@ -110,13 +108,8 @@
               // prediction model id 
               %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
             - relevant_features.sort_by{|d| d.category}.each_with_index do |relf,id|
-              -#- example.physchem_descriptors.sort_by{|d| OpenTox::Feature.find(d[0]).category}.each_with_index do |v,id|
               - feature = relf
-              /%p= feature.id
               - v = example.physchem_descriptors.find{|id,v| id == feature.id.to_s  }
-              /%p= v
-              -#- feature = OpenTox::Feature.find_by(:id => v[0])
-              -#- feature = v
               - name = feature.name
               - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
                 - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
