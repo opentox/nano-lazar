@@ -12,7 +12,7 @@
       $(".tablesorter").tablesorter({
         debug: false,
         theme: "bootstrap",
-        headerTemplate: '{content} {icon}',
+        //headerTemplate: '{content} {icon}',
         widgets: ['uitheme', 'staticRow', 'stickyHeaders'],
         widgetOptions: {
           stickyHeaders_attachTo: 'neighbors',
@@ -43,15 +43,15 @@
             Net cell association
             %br
             [mL/ug(Mg)]
-          - @input.each{|d| OpenTox::Feature.find(d[0]).category}.each do |key|
-            - feature = OpenTox::Feature.find_by(:id=>key[0])
+          - @input.each{|d| Feature.find(d[0]).category}.each do |key|
+            - feature = Feature.find_by(:id=>key[0])
             - name = feature.name
             - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
               - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
             - else
               - name = feature.name
-            %th.physchem
-              = name
+            %th.physchem.sorter-false
+              %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
       %tbody
         / query and match combined
         %tr.static
@@ -118,7 +118,7 @@
         / neighbors
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
-            - nano = OpenTox::Nanoparticle.find(neighbor["_id"])
+            - nano = Nanoparticle.find(neighbor[:id])
             %tr
               / ID
               %td
@@ -126,7 +126,7 @@
                   %h5.th5= nano.name
               / Similarity
               %td
-                %h5.th5= neighbor["similarity"].round(3)
+                %h5.th5= neighbor[:similarity].round(3)
               / Composition
               %td
                 %h5.th5 Core:
@@ -137,8 +137,8 @@
               / Tox
               %td.tox
                 %h5.th5 Measurement:
-                = neighbor["measurements"][0]
+                = neighbor[:measurement]
               / Physchem
-              - nano.physchem_descriptors.delete_if{|id,v| @type == "pc" ? !@pc_relevant_features.include?(OpenTox::Feature.find(id)) : !@pcp_relevant_features.include?(OpenTox::Feature.find(id))}.sort_by{|id,v| @pc_relevant_features.index OpenTox::Feature.find(id)}.each do |k,v|
+              - nano.properties.delete_if{|id,v| @type == "pc" ? !@pc_relevant_features.include?(Feature.find(id)) : !@pcp_relevant_features.include?(Feature.find(id))}.sort_by{|id,v| @pc_relevant_features.index Feature.find(id)}.each do |k,v|
                 %td.physchem
                   = v[0].round(3) unless v.nil?

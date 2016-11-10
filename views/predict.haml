@@ -11,7 +11,7 @@
       - @prediction_models.each_with_index do |m, idx|
         %li{:class => ("active" if idx == 0)}
           %a{:href => "#model_#{idx}", :id => "linkTab#{idx}", data: {toggle:"tab"}}
-            = "#{idx+1}. #{m.model.feature_selection_algorithm_parameters[:category].nil? ? "Physchem & Proteomics" : "Physchem" }"
+            = "#{idx+1}. #{m[:pcp_model] ? "Physchem & Proteomics" : "Physchem" }"
     %div.tab-content
       - @prediction_models.each_with_index do |m, idx|
         - m[:pc_model] ? (example = @example_pc; type = "pc"; relevant_features = @pc_relevant_features) : (example = @example_pcp; type = "pcp"; relevant_features = @pcp_relevant_features)
@@ -39,17 +39,23 @@
           Unit:
           = m.unit
           %br
-          Prediction algorithm:
-          = m.model.prediction_algorithm.split(".").last.gsub("_"," ")
+          %b Algorithms:
           %br
-          Prediction algorithm parameter:
-          = "random forest" if m.model.prediction_algorithm_parameters["method"] == "rf"
+          Similarity:
+          %a{:href=> "http://www.rubydoc.info/gems/lazar/OpenTox%2F#{m.model.algorithms["similarity"]["method"].sub("::", "%2F")}", :rel=>"external"}
+            = m.model.algorithms["similarity"]["method"]
+          = ", min: #{m.model.algorithms["similarity"]["min"]}"
           %br
-          Neighbor algorithm:
-          = m.model.neighbor_algorithm.gsub("_", " ")
+          Prediction:
+          %a{:href=>"http://www.rubydoc.info/gems/lazar/OpenTox%2F#{m.model.algorithms["prediction"]["method"].sub("::","%2f")}", :rel=>"external"}
+            = m.model.algorithms["prediction"]["method"]
           %br
-          Neighbor algorithm parameter:
-          = "min sim = #{m.model.neighbor_algorithm_parameters["min_sim"]}"
+          Feature selection:
+          = m.model.algorithms["feature_selection"]["method"].split(".").last
+          %br
+          Descriptors:
+          = m.model.algorithms["descriptors"]["method"]+","
+          = m.model.algorithms["descriptors"]["categories"]
           %p
           %b Independent crossvalidations (log2 transformed):
           - crossvalidations =[]
@@ -89,7 +95,7 @@
               // example data to compare
               %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core}"}
               %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating}"}
-              %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.physchem_descriptors}"}
+              %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
               - size = relevant_features.size
               %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
               %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
@@ -107,9 +113,13 @@
               %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
               // prediction model id 
               %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
-            - relevant_features.sort_by{|d| d.category}.each_with_index do |relf,id|
+            //sort the relevant features
+            - pc = relevant_features.collect{|f| f if f.category == "P-CHEM"}.compact
+            - pcp = relevant_features.collect{|f| f if f.category == "Proteomics"}.compact
+            - relevant_features = pc.sort_by{|f| f.name} + pcp.sort_by{|f| f.name}
+            - relevant_features.each_with_index do |relf,id|
               - feature = relf
-              - v = example.physchem_descriptors.find{|id,v| id == feature.id.to_s  }
+              - v = example.properties.find{|id,v| id == feature.id.to_s  }
               - name = feature.name
               - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
                 - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
@@ -119,12 +129,10 @@
               - id = id + 1
               - if feature.category == "Proteomics"
                 %h5
-                  %a{:href=>"http://www.uniprot.org/uniprot/#{name}", :rel=>"external"}= name
-              - else
-                / prepare name string for npo_search
-                - string = name.split("/").first.downcase.gsub(/%s/, "%20")
+                  %a{:href=>"http://www.uniprot.org/uniprot/#{name}", :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
+              - if feature.category == "P-CHEM"
                 %h5
-                  %a{:href=>$npo_search % string, :rel=>"external"}= name
+                  %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
               // input physchem parameters
               %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0] if val[0]}", :disabled=>("disabled" if val[0] == "-")}
               - if val[0] == "-"
