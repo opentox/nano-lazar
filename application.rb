@@ -5,6 +5,11 @@ $ambit_search = "http://data.enanomapper.net/substance?type=name&search="
 
 include OpenTox
 
+# collect nanoparticles from training dataset (Au + Ag)
+dataset = Dataset.find_by(:name=> "Protein Corona Fingerprinting Predicts the Cellular Interaction of Gold and Silver Nanoparticles")
+$nanoparticles = dataset.nanoparticles
+$coating_list = $nanoparticles.collect{|n| n if !n.coating[0].smiles.nil?}.compact.uniq
+
 configure :development do
   #$logger = Logger.new(STDOUT)
 end
@@ -18,7 +23,7 @@ get '/?' do
 end
 #=begin
 get '/qmrf-report/:id' do
-  prediction_model = Model::NanoPrediction.find(params[:id])
+  prediction_model = OpenTox::Model::Validation.find(params[:id])
   if prediction_model
     model = prediction_model.model
 		model_type = "regression"
@@ -74,24 +79,35 @@ end
 #=end
 get '/predict/?' do
   @prediction_models = []
-  prediction_models = Model::NanoPrediction.all
-  prediction_models.each{|m| m.model[:algorithms]["descriptors"]["categories"] == ["P-CHEM"] ? @prediction_models[0] = m : @prediction_models[1] = m}
-  # define type (pc or pcp)
-  @prediction_models.each_with_index{|m,idx| idx == 0 ? m[:pc_model] = true : m[:pcp_model] = true}
-  # collect nanoparticles by training dataset (Ag + Au)
-  dataset = Dataset.find_by(:name=> "Protein Corona Fingerprinting Predicts the Cellular Interaction of Gold and Silver Nanoparticles")
-  nanoparticles = dataset.nanoparticles
+  models = OpenTox::Model::Validation.all
+  prediction_models = models.delete_if{|m| m.model.name !~ /\b(Net cell association)\b/}
+ 
+  # sort and collect prediction models
+  @prediction_models[0] = prediction_models.find{|m| m.model[:algorithms]["descriptors"]["method"] == "fingerprint"}
+  @prediction_models[1] = prediction_models.delete_if{|m| m.model[:algorithms]["descriptors"]["method"] == "fingerprint"}.find{|m| m.model[:algorithms]["descriptors"]["categories"][0] =~ /P-CHEM/}
+  @prediction_models[2] = prediction_models.find{|m| m.model[:algorithms]["descriptors"]["categories"][0] == "Proteomics"}
+
+  # define type (fingerprint,physchem,proteomics)
+  @prediction_models[0]["type"] = "fingerprint"
+  @prediction_models[1]["type"] = "physchem"
+  @prediction_models[2]["type"] = "proteomics"
   
-  # select physchem_parameters by relevant features for each model
-  @pc_relevant_features = @prediction_models[0].model.descriptor_ids.collect{|id, v| Feature.find(id)}
-  @pcp_relevant_features = @prediction_models[1].model.descriptor_ids.collect{|id, v| Feature.find(id)}
-  pcp = nanoparticles.sample
-  pcp.properties.delete_if{|id,v| !@pcp_relevant_features.include?(Feature.find(id))}
-  @example_pcp = pcp
+  # select relevant features for each model
+  @fingerprint_relevant_features = @prediction_models[0].model.substance_ids.collect{|id| Substance.find(id)}
+  fingerprint = $coating_list.sample
+  fingerprint.properties.delete_if{|id,v| !@fingerprint_relevant_features.include?(Feature.find(id))}
+  @example_fingerprint = fingerprint
   
-  pc = nanoparticles.sample
-  pc.properties.delete_if{|id,v| !@pc_relevant_features.include?(Feature.find(id))}
-  @example_pc = pc
+  @physchem_relevant_features = @prediction_models[1].model.descriptor_ids.collect{|id, v| Feature.find(id)}
+  physchem = $nanoparticles.sample
+  physchem.properties.delete_if{|id,v| !@physchem_relevant_features.include?(Feature.find(id))}
+  @example_physchem = physchem
+  
+  @proteomics_relevant_features = @prediction_models[2].model.descriptor_ids.collect{|id, v| Feature.find(id)}
+  proteomics = $nanoparticles.sample
+  proteomics.properties.delete_if{|id,v| !@proteomics_relevant_features.include?(Feature.find(id))}
+  @example_proteomics = proteomics
+  
 
   haml :predict
 end
@@ -102,50 +118,69 @@ get '/license' do
 end
 
 post '/predict/?' do
-  # choose the right prediction model
-  prediction_model = Model::NanoPrediction.find(params[:prediction_model])
+  # select the prediction model
+  prediction_model = OpenTox::Model::Validation.find(params[:prediction_model])
   size = params[:size].to_i
   @type = params[:type]
 
-  example_core = eval(params[:example_core])
-  example_coating = eval(params[:example_coating])
+  example_core = params[:example_core]
+  example_coating = params[:example_coating]
   example_pc = eval(params[:example_pc])
-
-  in_core = eval(params[:in_core])
-  in_core["name"] = params[:input_core]
-  input_core = in_core
-
-  in_coating = eval(params[:in_coating])
-  in_coating[0]["name"] = params[:input_coating]
-  input_coating = in_coating
+  
+  input_core = params[:input_core]
+  input_coating = params[:input_coating]
 
   input_pc = {}
-  (1..size).each{|i| input_pc["#{params["input_key_#{i}"]}"] = [params["input_value_#{i}"].to_f] unless params["input_value_#{i}"] == "-"}
-
+  if @type =~ /physchem|proteomics/
+    (1..size).each{|i| input_pc["#{params["input_key_#{i}"]}"] = [params["input_value_#{i}"].to_f] unless params["input_value_#{i}"] == ""}
+  end
   
   # define relevant_features by input
-  @type = "pc" ? (@pc_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@pc_relevant_features = [])
-  @type = "pcp" ? (@pcp_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@pcp_relevant_features = [])
+  (@type == "fingerprint") ? (@fingerprint_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@physchem_relevant_features = [])
+  (@type == "physchem") ? (@physchem_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@physchem_relevant_features = [])
+  (@type == "proteomics") ? (@proteomics_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@proteomics_relevant_features = [])
 
-  if input_pc == example_pc && input_core == example_core && input_coating == example_coating
-    # unchanged input = database hit
-    nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
-    nanoparticle.properties = input_pc
-    @match = true
-    @nanoparticle = nanoparticle
-    @name = nanoparticle.name
-  else
-    # changed input = create nanoparticle to predict
-    nanoparticle = Nanoparticle.new
-    nanoparticle.core = input_core
-    nanoparticle.coating = input_coating
-    nanoparticle.properties = input_pc
-    @match = false
-    @nanoparticle = nanoparticle
+  
+  if @type =~ /physchem|proteomics/
+    if input_pc == example_pc && input_core == example_core && input_coating == example_coating
+      # unchanged input = database hit
+      nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
+      nanoparticle.properties = input_pc
+      @match = true
+      @nanoparticle = nanoparticle
+      @name = nanoparticle.name
+    else
+      # changed input = create nanoparticle to predict
+      nanoparticle = Nanoparticle.new
+      nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
+      nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s]
+      nanoparticle.properties = input_pc
+      @match = false
+      @nanoparticle = nanoparticle
+    end
   end
+
+  if @type == "fingerprint"
+    if input_core == example_core && input_coating == example_coating
+      # unchanged input = database hit
+      nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
+      #nanoparticle.properties = input_pc
+      @match = true
+      @nanoparticle = nanoparticle
+      @name = nanoparticle.name
+    else
+      # changed input = create nanoparticle to predict
+      nanoparticle = Nanoparticle.new
+      nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
+      nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s]
+      @match = false
+      @nanoparticle = nanoparticle
+    end
+  end
+
+
   # prediction output
   @input = input_pc
   @prediction = prediction_model.model.predict nanoparticle
-  
   haml :prediction
 end

@@ -3,6 +3,7 @@
     $("img.circle").show();
   };
 
+
 %div.well
   %h3.help-block
     Select an endpoint:
@@ -11,10 +12,23 @@
       - @prediction_models.each_with_index do |m, idx|
         %li{:class => ("active" if idx == 0)}
           %a{:href => "#model_#{idx}", :id => "linkTab#{idx}", data: {toggle:"tab"}}
-            = "#{idx+1}. #{m[:pcp_model] ? "Physchem & Proteomics" : "Physchem" }"
+            = "#{idx+1}. #{m["type"].capitalize}"
     %div.tab-content
       - @prediction_models.each_with_index do |m, idx|
-        - m[:pc_model] ? (example = @example_pc; type = "pc"; relevant_features = @pc_relevant_features) : (example = @example_pcp; type = "pcp"; relevant_features = @pcp_relevant_features)
+        - case m["type"]
+        - when "fingerprint"
+          - example = @example_fingerprint
+          - type = "fingerprint"
+          - relevant_features = @fingerprint_relevant_features
+        - when "physchem"
+          - example = @example_physchem
+          - type = "physchem"
+          - relevant_features = @physchem_relevant_features
+        - when "proteomics"
+          - example = @example_proteomics
+          - type = "proteomics"
+          - relevant_features = @proteomics_relevant_features
+        
         #model.tab-pane{:id=>"#{idx}", :class => ("active" if idx == 0)}
           %b Model:
           %br
@@ -51,18 +65,16 @@
             = m.model.algorithms["prediction"]["method"]
           %br
           Feature selection:
-          = m.model.algorithms["feature_selection"]["method"].split(".").last
+          = m.model.algorithms["feature_selection"]["method"].split(".").last if m.model.algorithms["feature_selection"]
           %br
           Descriptors:
           = m.model.algorithms["descriptors"]["method"]+","
           = m.model.algorithms["descriptors"]["categories"]
           %p
           %b Independent crossvalidations (log2 transformed):
-          - crossvalidations =[]
-          - m.repeated_crossvalidation.crossvalidation_ids.each{|cv| c = OpenTox::Validation::CrossValidation.find(cv); crossvalidations << c}
           %div.row{:id=>"validations#{m.id}", :style=>"background-color:#f5f5f5;"}
-            - crossvalidations.each do |cv|
-              %span.col-xs-4.col-sm-4.col-md-4.col-lg-4
+            - m.crossvalidations.each do |cv|
+              %span.col-xs-2.col-sm-2.col-md-2.col-lg-2
                 = "Num folds:\t"
                 = cv.folds
                 %br
@@ -88,56 +100,132 @@
           %form{:id=>idx, :role=>"form", :action=> to("/predict"), :method=>"post"}
             %h3.help-block
               Please characterise a nanoparticle:
-            #input
-            %div.form-group
-              // type pcp || pc
-              %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
-              // example data to compare
-              %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core}"}
-              %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating}"}
-              %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
-              - size = relevant_features.size
-              %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
-              %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+            
+            - if type == "fingerprint"
+              
+              // core
+              %div.form-group
+                // type = fingerprint
+                // send hidden example data to compare
+                %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
+                %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core["name"]}"}
+                %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating[0]["name"]}"}
+                %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
+                - size = relevant_features.size
+                %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+                %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+                
               // input form parameters to transfer
+              // core
               %div.form-group
                 %label{:for=>"selCore#{idx}"} Core
-                /%p= example.core["name"]
                 %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
-                  %option{:selected => ("selected" if example.core["name"] == "Ag")} Ag
-                  %option{:selected => ("selected" if example.core["name"] == "Au")} Au
-              %input{:id=>"input_core",:type=>"hidden",:name=>"in_core",:value=>"#{example.core}"}
-              //%h5 Coating
-              //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
-              %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
-              %input{:id=>"input_coating",:type=>"hidden",:name=>"in_coating",:value=>example.coating}
-              // prediction model id 
-              %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
-            //sort the relevant features
-            - pc = relevant_features.collect{|f| f if f.category == "P-CHEM"}.compact
-            - pcp = relevant_features.collect{|f| f if f.category == "Proteomics"}.compact
-            - relevant_features = pc.sort_by{|f| f.name} + pcp.sort_by{|f| f.name}
-            - relevant_features.each_with_index do |relf,id|
-              - feature = relf
-              - v = example.properties.find{|id,v| id == feature.id.to_s  }
-              - name = feature.name
-              - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
-                - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
-              - else
-                - name = feature.name
-              - val = !v.nil? ? v[1] : "-"
-              - id = id + 1
-              - if feature.category == "Proteomics"
-                %h5
-                  %a{:href=>"http://www.uniprot.org/uniprot/#{name}", :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
-              - if feature.category == "P-CHEM"
-                %h5
-                  %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
-              // input physchem parameters
-              %input.input-sm.form-control{:id=>id,:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0] if val[0]}", :disabled=>("disabled" if val[0] == "-")}
-              - if val[0] == "-"
-                %input{:id=>id,:type=>"hidden",:name=>"input_value_#{id}",:value=>"-"}
-              %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>feature.id}
+                  %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
+                  %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
+              
+              // coating
+              %div.form-group
+                %label{:for=>"selCoating#{idx}"} Coating
+                %select.form-control{:id=>"selCoating#{idx}", :autocomplete=>"off", :name=>"input_coating",:value=>example.coating[0]["name"]}
+                  - coatings = $coating_list.collect{|co| co.coating[0]["name"]}.uniq
+                  - coatings.each do |co|
+                    %option{:selected => ("selected" if example.coating[0]["name"] == co), :value => co}
+                      = co
+            
+            - if type =~ /physchem/
+              %div.form-group
+                // type = physchem,proteomics
+                // send hidden example data to compare
+                %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
+                %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core["name"]}"}
+                %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating[0]["name"]}"}
+                %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
+                - size = relevant_features.size
+                %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+                %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+                
+                // input form parameters to transfer
+                // core
+                %div.form-group
+                  %label{:for=>"selCore#{idx}"} Core
+                  %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
+                    //%option{:selected => "selected", :value => "-- select a core --", :style=>"display:none;"}
+                    %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
+                    %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
+                    //%option{:value => "Ag"} Ag
+                    //%option{:value => "Au"} Au
+                
+                // coating
+                //%h5 Coating
+                //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
+                %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
+              
+                // relevant features
+                - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
+                  - feature = relf
+                  - v = example.properties.find{|id,v| id == feature.id.to_s  }
+                  - name = feature.name
+                  - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
+                    - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
+                  - else
+                    - name = feature.name
+                  - val = !v.nil? ? v[1] : ""
+                  - id = id + 1
+                  
+                  %h5
+                    %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
+
+                  // input physchem parameters
+                  %input.input-sm.form-control{:id=>"#{id}",:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0]}"}
+                  %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>feature.id}
+            
+            - if type =~ /proteomics/
+              %div.form-group
+                // type = physchem,proteomics
+                // send hidden example data to compare
+                %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
+                %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core["name"]}"}
+                %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating[0]["name"]}"}
+                %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
+                - size = relevant_features.size
+                %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+                %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
+                
+                // input form parameters to transfer
+                // core
+                %div.form-group
+                  %label{:for=>"selCore#{idx}"} Core
+                  %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
+                    %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
+                    %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
+                
+                // coating
+                //%h5 Coating
+                //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
+                %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
+              
+                // relevant features
+                - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
+                  - feature = relf
+                  - v = example.properties.find{|id,v| id == feature.id.to_s  }
+                  - name = feature.name
+                  - if feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?
+                    - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
+                  - else
+                    - name = feature.name
+                  - val = !v.nil? ? v[1] : ""
+                  - id = id + 1
+                  
+                  %h5
+                    %a{:href=>"http://www.uniprot.org/uniprot/#{name}", :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
+
+                  // input physchem parameters
+                  %input.input-sm.form-control{:id=>"#{id}",:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0]}"}
+                  %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>feature.id}
+            
+            // prediction model id 
+            %input{:id=>"prediction_model",:type=>"hidden",:name=>"prediction_model",:value=>m.id}
+            
             %hr
             #predict
               %button.btn.btn-success{:id=>"submitbutton", :type=>"submit", :onclick=>"showcircle();"} 

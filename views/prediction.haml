@@ -43,15 +43,16 @@
             Net cell association
             %br
             [mL/ug(Mg)]
-          - @input.each{|d| Feature.find(d[0]).category}.each do |key|
-            - feature = Feature.find_by(:id=>key[0])
-            - name = feature.name
-            - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
-              - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
-            - else
+          - if @type =~ /physchem|proteomics/
+            - @input.each{|d| Feature.find(d[0]).category}.each do |key|
+              - feature = Feature.find_by(:id=>key[0])
               - name = feature.name
-            %th.physchem.sorter-false
-              %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
+              - if (feature[:conditions] && !feature[:conditions]["MEDIUM"].blank?)
+                - name = feature.name + " / " + feature[:conditions]["MEDIUM"]
+              - else
+                - name = feature.name
+              %th.physchem.sorter-false
+                %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
       %tbody
         / query and match combined
         %tr.static
@@ -70,20 +71,15 @@
               %h5.th5 x
           / composition
           %td
-            - if @match
-              %h5.th5 Core:
-              %a{:href=>@nanoparticle[:core]["uri"], :rel=>"external"}= "["+@nanoparticle[:core]["name"]+"]"
-              /%br
-              /%h5.th5 Coating:
-              /= @nanoparticle[:coating][0]["name"]
-              /%br
-            - else
-              %h5.th5 Core:
-              = "["+@nanoparticle[:core]["name"]+"]"
-              /%br
-              /%h5.th5 Coating:
-              /= @nanoparticle[:coating][0]["name"]
-              /%br
+            - core = Substance.find @nanoparticle[:core_id]
+            %h5.th5 Core:
+            %a{:href=>core.source, :rel=>"external"}= "["+core.name+"]"
+            %br
+            - if @type == "fingerprint"
+              - coating = Substance.find @nanoparticle[:coating_ids][0]
+              %h5.th5 Coating:
+              %a{:href=>coating.source, :rel=>"external"}= coating.name
+              %br
           / tox
           %td.tox
             - if @prediction[:value]
@@ -107,18 +103,21 @@
             - if !@prediction[:value] && !@prediction[:measurements]
               %h5.th5 not available
           / physchem
-          - @input.each do |v|
-            %td.physchem
-              %div{:style=>"display:inline-block;padding-right:20px;"}
-                - if v[1].nil?
-                  %p x
-                - else
-                  %p= v[1][0].round(3)
+          - if @type =~ /physchem|proteomics/
+            - @input.each do |v|
+              %td.physchem
+                %div{:style=>"display:inline-block;padding-right:20px;"}
+                  - if v[1].nil?
+                    %p x
+                  - else
+                    %p= v[1][0].round(3)
 
         / neighbors
         - if @prediction[:neighbors]
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             - nano = Nanoparticle.find(neighbor[:id])
+            - core = Substance.find nano.core_id
+            - coating = Substance.find nano.coating_ids[0]
             %tr
               / ID
               %td
@@ -130,15 +129,22 @@
               / Composition
               %td
                 %h5.th5 Core:
-                %a{:href=>nano[:core]["uri"], :rel=> "external"}= "["+nano[:core]["name"]+"]"
+                %a{:href=>core.source, :rel=> "external"}= "["+core.name+"]"
                 %br
                 %h5.th5 Coating:
-                %a{:href=>nano[:coating][0]["uri"], :rel=>"external"}= nano[:coating][0]["name"]
+                %a{:href=>coating.source, :rel=>"external"}= coating.name
               / Tox
               %td.tox
                 %h5.th5 Measurement:
                 = neighbor[:measurement]
               / Physchem
-              - nano.properties.delete_if{|id,v| @type == "pc" ? !@pc_relevant_features.include?(Feature.find(id)) : !@pcp_relevant_features.include?(Feature.find(id))}.sort_by{|id,v| @pc_relevant_features.index Feature.find(id)}.each do |k,v|
-                %td.physchem
-                  = v[0].round(3) unless v.nil?
+              - case @type
+              - when "physchem"
+                - nano.properties.delete_if{|id,v| !@physchem_relevant_features.include?(Feature.find(id))}.sort_by{|id,v| @physchem_relevant_features.index Feature.find(id)}.each do |k,v|
+                  %td.physchem
+                    = v[0].round(3) unless v.nil?
+              - when "proteomics"
+                - nano.properties.delete_if{|id,v| !@proteomics_relevant_features.include?(Feature.find(id))}.sort_by{|id,v| @proteomics_relevant_features.index Feature.find(id)}.each do |k,v|
+                  %td.physchem
+                    = v[0].round(3) unless v.nil?
+

@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "rdiscount"
   s.add_runtime_dependency "haml"
   s.add_runtime_dependency "unicorn"
-  s.add_runtime_dependency "gem-path", "~> 0.6.1", '>= 0.6.1'
+  s.add_runtime_dependency "gem-path"
 
   s.post_install_message = %q{
     How to build nano-lazar prediction models described over here: https://github.com/opentox/lazar-public-data .  
