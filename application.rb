@@ -100,6 +100,8 @@ get '/predict/?' do
   
   @physchem_relevant_features = @prediction_models[1].model.descriptor_ids.collect{|id, v| Feature.find(id)}
   physchem = $nanoparticles.sample
+  # only Ag for testing
+  #physchem = $nanoparticles.find{|n| c = Substance.find(n.core_id); c.name == "Ag"}
   physchem.properties.delete_if{|id,v| !@physchem_relevant_features.include?(Feature.find(id))}
   @example_physchem = physchem
   
@@ -132,7 +134,7 @@ post '/predict/?' do
 
   input_pc = {}
   if @type =~ /physchem|proteomics/
-    (1..size).each{|i| input_pc["#{params["input_key_#{i}"]}"] = [params["input_value_#{i}"].to_f] unless params["input_value_#{i}"] == ""}
+    (1..size).each{|i| input_pc["#{params["input_key_#{i}"]}"] = [params["input_value_#{i}"].to_f] unless params["input_value_#{i}"].blank?}
   end
   
   # define relevant_features by input
@@ -142,7 +144,7 @@ post '/predict/?' do
 
   
   if @type =~ /physchem|proteomics/
-    if input_pc == example_pc && input_core == example_core && input_coating == example_coating
+    if input_pc == example_pc && input_core == example_core #&& input_coating == example_coating
       # unchanged input = database hit
       nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
       nanoparticle.properties = input_pc
@@ -153,7 +155,7 @@ post '/predict/?' do
       # changed input = create nanoparticle to predict
       nanoparticle = Nanoparticle.new
       nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
-      nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s]
+      #nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s] if input_coating
       nanoparticle.properties = input_pc
       @match = false
       @nanoparticle = nanoparticle
@@ -161,10 +163,8 @@ post '/predict/?' do
   end
 
   if @type == "fingerprint"
-    if input_core == example_core && input_coating == example_coating
-      # unchanged input = database hit
-      nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
-      #nanoparticle.properties = input_pc
+    nanoparticle = $coating_list.find{|n| n.core.name == input_core && n.coating[0].name == input_coating}
+    if !nanoparticle.nil?
       @match = true
       @nanoparticle = nanoparticle
       @name = nanoparticle.name

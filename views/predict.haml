@@ -1,8 +1,43 @@
 :javascript
+
+  $(window).bind("pageshow", function(event) {
+    $("img.circle").hide();
+  });
+  
   function showcircle() {
     $("img.circle").show();
   };
-
+  $(document).ready(function(){  
+    $('#selCore1').change(function(){
+      var selection = $(this).val();
+      switch(selection){
+        case "Ag":
+          $("#physchem1").prop('disabled', false);
+          $("#physchem2").prop('disabled', false);
+          $("#physchem3").prop('disabled', true);
+          $("#physchem4").prop('disabled', true);
+          $("#physchem5").prop('disabled', true);
+          $("#physchem6").prop('disabled', false);
+          $("#physchem7").prop('disabled', true);
+          $("#physchem8").prop('disabled', true);
+          $("#physchem9").prop('disabled', true);
+          $("#physchem10").prop('disabled', true);
+          break;
+        case "Au":
+          $("#physchem1").prop('disabled', false);
+          $("#physchem2").prop('disabled', false);
+          $("#physchem3").prop('disabled', false);
+          $("#physchem4").prop('disabled', false);
+          $("#physchem5").prop('disabled', false);
+          $("#physchem6").prop('disabled', false);
+          $("#physchem7").prop('disabled', false);
+          $("#physchem8").prop('disabled', false);
+          $("#physchem9").prop('disabled', false);
+          $("#physchem10").prop('disabled', false);
+          break;
+      };
+    });
+  });
 
 %div.well
   %h3.help-block
@@ -149,16 +184,13 @@
                 %div.form-group
                   %label{:for=>"selCore#{idx}"} Core
                   %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
-                    //%option{:selected => "selected", :value => "-- select a core --", :style=>"display:none;"}
                     %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
                     %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
-                    //%option{:value => "Ag"} Ag
-                    //%option{:value => "Au"} Au
                 
                 // coating
                 //%h5 Coating
                 //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
-                %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
+                //%input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
               
                 // relevant features
                 - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
@@ -176,7 +208,7 @@
                     %a.descriptor{:href=>$npo[feature.name], :rel=>"external"}= name + (feature.unit.blank? ? "" : " (#{feature.unit})")
 
                   // input physchem parameters
-                  %input.input-sm.form-control{:id=>"#{id}",:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0]}"}
+                  %input.input-sm.form-control{:id=>"physchem#{id}",:type=>"text",:name=>"input_value_#{id}",:value=>"#{val[0]}", :disabled=>("disabled" if val[0].blank?)}
                   %input{:id=>id,:type=>"hidden",:name=>"input_key_#{id}",:value=>feature.id}
             
             - if type =~ /proteomics/
@@ -202,7 +234,7 @@
                 // coating
                 //%h5 Coating
                 //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
-                %input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
+                //%input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
               
                 // relevant features
                 - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
