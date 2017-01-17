@@ -95,7 +95,7 @@ get '/predict/?' do
   # select relevant features for each model
   @fingerprint_relevant_features = @prediction_models[0].model.substance_ids.collect{|id| Substance.find(id)}
   fingerprint = $coating_list.sample
-  fingerprint.properties.delete_if{|id,v| !@fingerprint_relevant_features.include?(Feature.find(id))}
+  #fingerprint.properties.delete_if{|id,v| !@fingerprint_relevant_features.include?(Feature.find(id))}
   @example_fingerprint = fingerprint
   
   @physchem_relevant_features = @prediction_models[1].model.descriptor_ids.collect{|id, v| Feature.find(id)}
@@ -126,24 +126,41 @@ post '/predict/?' do
   @type = params[:type]
 
   example_core = params[:example_core]
-  example_coating = params[:example_coating]
-  example_pc = eval(params[:example_pc])
+  #example_coating = params[:example_coating]
+  example_coating = params.collect{|k,v| v if k =~ /example_coating_/}.compact
   
   input_core = params[:input_core]
-  input_coating = params[:input_coating]
+  input_coating = params.collect{|k,v| v if k =~ /input_coating_/}.compact
 
+  example_pc = eval(params[:example_pc])
   input_pc = {}
   if @type =~ /physchem|proteomics/
     (1..size).each{|i| input_pc["#{params["input_key_#{i}"]}"] = [params["input_value_#{i}"].to_f] unless params["input_value_#{i}"].blank?}
   end
   
-  # define relevant_features by input
-  (@type == "fingerprint") ? (@fingerprint_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@physchem_relevant_features = [])
-  (@type == "physchem") ? (@physchem_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@physchem_relevant_features = [])
-  (@type == "proteomics") ? (@proteomics_relevant_features = input_pc.collect{|id,v| Feature.find(id)}) : (@proteomics_relevant_features = [])
+  if @type == "fingerprint"
+    @fingerprint_relevant_features = []
+    nanoparticle = (input_core == example_core && input_coating == example_coating) ? Nanoparticle.find(params[:example_id]) : nil
 
-  
+    if !nanoparticle.nil?
+      @match = true
+      @nanoparticle = nanoparticle
+      @name = nanoparticle.name
+    else
+      # changed input = create nanoparticle to predict
+      nanoparticle = Nanoparticle.new
+      nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
+      nanoparticle.coating_ids = []
+      input_coating.each{|ic| nanoparticle.coating_ids << Compound.find_by(:name=>ic).id.to_s}
+      @match = false
+      @nanoparticle = nanoparticle
+    end
+  end
+
   if @type =~ /physchem|proteomics/
+    (@type == "physchem") ? (@physchem_relevant_features = input_pc.collect{|id,v| Feature.find(id)}.compact) : (@physchem_relevant_features = [])
+    (@type == "proteomics") ? (@proteomics_relevant_features = input_pc.collect{|id,v| Feature.find(id)}.compact) : (@proteomics_relevant_features = [])
+    
     if input_pc == example_pc && input_core == example_core #&& input_coating == example_coating
       # unchanged input = database hit
       nanoparticle = Nanoparticle.find_by(:id => params[:example_id])
@@ -157,22 +174,6 @@ post '/predict/?' do
       nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
       #nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s] if input_coating
       nanoparticle.properties = input_pc
-      @match = false
-      @nanoparticle = nanoparticle
-    end
-  end
-
-  if @type == "fingerprint"
-    nanoparticle = $coating_list.find{|n| n.core.name == input_core && n.coating[0].name == input_coating}
-    if !nanoparticle.nil?
-      @match = true
-      @nanoparticle = nanoparticle
-      @name = nanoparticle.name
-    else
-      # changed input = create nanoparticle to predict
-      nanoparticle = Nanoparticle.new
-      nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
-      nanoparticle.coating_ids = [Compound.find_by(:name=>input_coating).id.to_s]
       @match = false
       @nanoparticle = nanoparticle
     end

@@ -76,10 +76,12 @@
             %a{:href=>core.source, :rel=>"external"}= "["+core.name+"]"
             %br
             - if @type == "fingerprint"
-              - coating = Substance.find @nanoparticle[:coating_ids][0]
+              - coating = []
+              - @nanoparticle[:coating_ids].each{|id| coating << Substance.find(id) }
               %h5.th5 Coating:
-              %a{:href=>coating.source, :rel=>"external"}= coating.name
-              %br
+              - coating.each do |co|
+                %a{:href=>co.source, :rel=>"external"}= co.name
+                %br
           / tox
           %td.tox
             - if @prediction[:value]
@@ -117,7 +119,8 @@
           - @prediction[:neighbors].each_with_index do |neighbor,idx|
             - nano = Nanoparticle.find(neighbor[:id])
             - core = Substance.find nano.core_id
-            - coating = Substance.find nano.coating_ids[0]
+            - coating = []
+            - nano.coating_ids.each{|id| coating << Substance.find(id)}
             %tr
               / ID
               %td
@@ -132,7 +135,9 @@
                 %a{:href=>core.source, :rel=> "external"}= "["+core.name+"]"
                 %br
                 %h5.th5 Coating:
-                %a{:href=>coating.source, :rel=>"external"}= coating.name
+                - coating.each do |co| 
+                  %a{:href=>co.source, :rel=>"external"}= co.name
+                  %br
               / Tox
               %td.tox
                 %h5.th5 Measurement:

@@ -7,6 +7,46 @@
   function showcircle() {
     $("img.circle").show();
   };
+  
+  function addCoating(type, coatings) {
+    //console.log(type, coatings);
+    var allCoatings = coatings;
+    var usedCoatings = [];
+    var removedCoating = [];
+    var div = document.getElementById("coatings");
+    var selectChilds = div.getElementsByTagName("select");
+    console.log(selectChilds);
+    // iterate the whole select elements and decide to add or remove;
+    // last coating should be always present; remove all used coatings
+    // from the option list for new elements, but add them back if a
+    // select element was removed;
+    for(i=0; i < selectChilds.length; i++){
+      id = selectChilds[i].id;
+      console.log(selectChilds[i].id);
+      value = selectChilds[i].value;
+      console.log(selectChilds[i].value);
+
+      if (type === "add"){
+        var element = document.getElementById(id);
+        var clone = element.cloneNode(true);
+        console.log(i);
+        console.log(i+1);
+        clone.id = "selCoating" + (selectChilds.length + 1);
+        clone.name = "input_coating_" + (selectChilds.length + 1);
+        console.log(clone.name);
+        div.appendChild(clone);
+        break;
+      };
+      if (type === "remove" && i !== 0){
+        var id = selectChilds[selectChilds.length - 1].id
+        document.getElementById(id).remove();
+        break;
+      }else{
+        //alert("One coating is required.")
+      };
+    };
+  };
+
   $(document).ready(function(){  
     $('#selCore1').change(function(){
       var selection = $(this).val();
@@ -138,16 +178,14 @@
             
             - if type == "fingerprint"
               
-              // core
               %div.form-group
                 // type = fingerprint
                 // send hidden example data to compare
                 %input{:id=>"type",:type=>"hidden",:name=>"type",:value=>"#{type}"}
                 %input{:id=>"example_core",:type=>"hidden",:name=>"example_core",:value=>"#{example.core["name"]}"}
-                %input{:id=>"example_coating",:type=>"hidden",:name=>"example_coating",:value=>"#{example.coating[0]["name"]}"}
-                %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"#{example.properties}"}
-                - size = relevant_features.size
-                %input{:id=>"size",:type=>"hidden",:name=>"size",:value=>size}
+                - example.coating.each_with_index do |ex_coating, idx|
+                  %input{:id=>"example_coating_#{idx}",:type=>"hidden",:name=>"example_coating_#{idx}",:value=>"#{ex_coating["name"]}"}
+                %input{:id=>"example_pc",:type=>"hidden",:name=>"example_pc",:value=>"{}"}
                 %input{:id=>"id",:type=>"hidden",:name=>"example_id",:value=>example.id}
                 
               // input form parameters to transfer
@@ -159,13 +197,18 @@
                   %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
               
               // coating
-              %div.form-group
+              - coatings = $coating_list.collect{|nano| nano.coating.collect{|co| co["name"]}}.flatten.compact.uniq.sort_by(&:downcase)
+              %div.form-group{:id=>"coatings"}
                 %label{:for=>"selCoating#{idx}"} Coating
-                %select.form-control{:id=>"selCoating#{idx}", :autocomplete=>"off", :name=>"input_coating",:value=>example.coating[0]["name"]}
-                  - coatings = $coating_list.collect{|co| co.coating[0]["name"]}.uniq
-                  - coatings.each do |co|
-                    %option{:selected => ("selected" if example.coating[0]["name"] == co), :value => co}
-                      = co
+                - example.coating.each_with_index do |ex_coating, idx|
+                  %select.form-control{:id=>"selCoating#{idx}", :autocomplete=>"off", :name=>"input_coating_#{idx}",:value=>ex_coating["name"]}
+                    - coatings.each do |co|
+                      %option{:selected => ("selected" if ex_coating["name"] == co), :value => co}
+                        = co
+                
+              %div{:id=>"coating_buttons"}
+                %span.btn.glyphicon.glyphicon-plus{:onclick=>"addCoating(\"add\", #{coatings});"}
+                %span.btn.glyphicon.glyphicon-minus{:onclick=>"addCoating(\"remove\", #{coatings});"}
             
             - if type =~ /physchem/
               %div.form-group
@@ -186,11 +229,6 @@
                   %select.form-control{:id=>"selCore#{idx}", :autocomplete=>"off", :name=>"input_core",:value=>example.core["name"]}
                     %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
                     %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
-                
-                // coating
-                //%h5 Coating
-                //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
-                //%input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
               
                 // relevant features
                 - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
@@ -231,11 +269,6 @@
                     %option{:selected => ("selected" if example.core["name"] == "Ag"), :value => "Ag"} Ag
                     %option{:selected => ("selected" if example.core["name"] == "Au"), :value => "Au"} Au
                 
-                // coating
-                //%h5 Coating
-                //%input.input-sm.form-control{:id=>"coating",:type=>"text",:disabled=>"disabled",:name=>"coating",:value=>example.coating[0]["name"]}
-                //%input.input-sm.form-control{:id=>"coating",:type=>"hidden",:name=>"input_coating",:value=>example.coating[0]["name"]}
-              
                 // relevant features
                 - relevant_features.sort_by{|f| f.name}.each_with_index do |relf,id|
                   - feature = relf
