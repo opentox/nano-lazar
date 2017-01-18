@@ -65,10 +65,7 @@
               %h5.th5 Query
           / similarity
           %td
-            - if @match
-              %h5.th5 1.0
-            - else
-              %h5.th5 x
+            %h5.th5 1.0
           / composition
           %td
             - core = Substance.find @nanoparticle[:core_id]
