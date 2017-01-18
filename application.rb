@@ -126,7 +126,6 @@ post '/predict/?' do
   @type = params[:type]
 
   example_core = params[:example_core]
-  #example_coating = params[:example_coating]
   example_coating = params.collect{|k,v| v if k =~ /example_coating_/}.compact
   
   input_core = params[:input_core]
@@ -139,18 +138,17 @@ post '/predict/?' do
   end
   
   if @type == "fingerprint"
-    @fingerprint_relevant_features = []
-    nanoparticle = (input_core == example_core && input_coating == example_coating) ? Nanoparticle.find(params[:example_id]) : nil
-
-    if !nanoparticle.nil?
+    # search for database hit
+    dbhit = $coating_list.find{|nano| nano.core.name == input_core && (nano.coating.collect{|co| co.name}) == input_coating }
+    if !dbhit.nil?
       @match = true
-      @nanoparticle = nanoparticle
-      @name = nanoparticle.name
+      nanoparticle = dbhit
+      @nanoparticle = dbhit
+      @name = @nanoparticle.name
     else
-      # changed input = create nanoparticle to predict
+      # no database hit => create nanoparticle
       nanoparticle = Nanoparticle.new
       nanoparticle.core_id = Compound.find_by(:name=>input_core).id.to_s
-      nanoparticle.coating_ids = []
       input_coating.each{|ic| nanoparticle.coating_ids << Compound.find_by(:name=>ic).id.to_s}
       @match = false
       @nanoparticle = nanoparticle
