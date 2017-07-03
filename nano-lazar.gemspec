@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.homepage    = "http://github.com/enanomapper/nano-lazar"
   s.summary     = %q{nano-lazar}
   s.description = %q{Graphical user interface for nano-lazar toxicology predictions}
-  s.license     = 'GPL-3'
+  s.license     = 'GPL-3.0'
   s.executables = ["nano-lazar-start", "nano-lazar-stop"]
   s.rubyforge_project = "nano-lazar"
 
