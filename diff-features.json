@@ -1,0 +1,18 @@
+{
+  "ZETA POTENTIAL Change": [
+    "ZETA POTENTIAL [mV]",
+    "ZETA POTENTIAL Human serum (Sigma #H4522) [mV]"
+  ],
+  "Localized Surface Plasmon Resonance (LSPR) index Change": [
+    "Localized Surface Plasmon Resonance (LSPR) index",
+    "Localized Surface Plasmon Resonance (LSPR) index Human serum (Sigma #H4522)"
+  ],
+  "Polydispersity index Change": [
+    "Polydispersity index [nm]",
+    "Polydispersity index Human serum (Sigma #H4522) [nm]"
+  ],
+  "Volume Mean Hydrodynamic Diameter Change": [
+    "Volume Mean Hydrodynamic Diameter [nm]",
+    "Volume Mean Hydrodynamic Diameter Human serum (Sigma #H4522) [nm]"
+  ]
+}
